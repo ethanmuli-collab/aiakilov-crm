@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block title %}{{ lead.first_name }} {{ lead.last_name }} · AIAKILOV CRM{% endblock %}
+{% block heading %}{{ lead.first_name }} {{ lead.last_name }}{% endblock %}
+{% block subheading %}
+  {{ lead.course_interest or 'ללא קורס' }} ·
+  {{ source_he.get(lead.lead_source, lead.lead_source or 'ללא מקור') }}
+{% endblock %}
+{% block actions %}
+  <a class="btn" href="{{ url_for('leads.edit', lead_id=lead.id) }}">עריכה</a>
+  {% if lead.status == 'Won' and not student %}
+  <form method="post" action="{{ url_for('leads.convert', lead_id=lead.id) }}" style="display:inline">
+    <button class="btn btn-primary" type="submit">המרה לתלמיד<span class="spinner"></span></button>
+  </form>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="grid" style="grid-template-columns:minmax(0,2fr) minmax(0,1fr);align-items:start">
+
+  <div class="grid" style="gap:14px">
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">פרטי הליד</span>
+        <form method="post" action="{{ url_for('leads.change_status', lead_id=lead.id) }}"
+              style="display:flex;gap:6px;align-items:center">
+          <label for="status" style="font-size:12px">סטטוס</label>
+          <select id="status" name="status" style="width:auto">
+            {% for s in statuses %}
+            <option value="{{ s }}" {{ 'selected' if lead.status == s }}>{{ status_he[s] }}</option>
+            {% endfor %}
+          </select>
+          <button class="btn btn-sm btn-primary" type="submit" data-no-loading>עדכון</button>
+        </form>
+      </div>
+      <div class="card-body">
+        <div class="grid grid-2">
+          <dl class="dl">
+            <dt>אימייל</dt><dd>{{ lead.email or '—' }}</dd>
+            <dt>טלפון</dt><dd class="num">{{ lead.phone or '—' }}</dd>
+            <dt>עיר</dt><dd>{{ lead.city or '—' }}</dd>
+            <dt>גיל</dt><dd class="num">{{ lead.age or '—' }}</dd>
+            <dt>עיסוק</dt><dd>{{ lead.occupation or '—' }}</dd>
+            <dt>השכלה</dt><dd>{{ lead.education or '—' }}</dd>
+          </dl>
+          <dl class="dl">
+            <dt>קורס מבוקש</dt><dd>{{ lead.course_interest or '—' }}</dd>
+            <dt>מקור הליד</dt>
+            <dd>{{ source_he.get(lead.lead_source, lead.lead_source or '—') }}</dd>
+            <dt>תקציב</dt><dd class="num">{{ lead.budget|ils if lead.budget else '—' }}</dd>
+            <dt>מועד מועדף</dt><dd>{{ lead.preferred_schedule or '—' }}</dd>
+            <dt>ניסיון AI קודם</dt>
+            <dd>{{ 'כן' if lead.previous_ai_experience else 'לא' }}</dd>
+            <dt>אינטראקציות</dt><dd class="num">{{ lead.interaction_count }}</dd>
+            <dt>נציג מטפל</dt><dd>{{ lead.assigned_sales_rep or '—' }}</dd>
+          </dl>
+        </div>
+        {% if lead.notes %}
+        <div class="note" style="margin-top:14px">{{ lead.notes }}</div>
+        {% endif %}
+        {% if student %}
+        <div class="note" style="margin-top:14px">
+          הליד הומר לתלמיד ·
+          <a href="{{ url_for('students.detail', student_id=student.id) }}"
+             style="color:var(--accent);font-weight:600">מעבר לכרטיס התלמיד →</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="card-title">ציר פעילות והערות</span></div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('leads.add_note', lead_id=lead.id) }}"
+              style="display:flex;gap:8px;margin-bottom:14px">
+          <input name="note" placeholder="הוספת הערה או תיעוד שיחה..." aria-label="הערה חדשה">
+          <button class="btn btn-primary" type="submit" data-no-loading>הוספה</button>
+        </form>
+        {% if activities %}
+        <div class="timeline">
+          {% for a in activities %}
+          <div class="timeline-item">
+            <span class="timeline-dot"></span>
+            <div>
+              <div class="timeline-text">{{ a.description }}</div>
+              <div class="timeline-meta">
+                {{ a.created_by or 'מערכת' }} · {{ a.created_at[:16].replace('T', ' ') }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty" style="padding:24px">
+          <div class="empty-title">אין עדיין פעילות</div>
+          <div>הערות ושינויי סטטוס יופיעו כאן.</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="grid" style="gap:14px">
+    <div class="card">
+      <div class="card-head"><span class="card-title">חיזוי הסתברות רכישה</span></div>
+      <div class="card-body">
+        {% if prediction.get('percent') is not none and not prediction.get('error') %}
+        <div class="prob-hero">
+          <span class="big">{{ prediction.percent }}%</span>
+          <span class="badge {{ 'green' if prediction.level == 'high'
+                              else 'amber' if prediction.level == 'medium' else '' }}">
+            {{ prediction.level_label }}</span>
+        </div>
+        <div class="prob-bar" style="height:8px;margin:14px 0 6px">
+          <span class="prob-fill {{ prediction.level }}" style="width:{{ prediction.percent }}%"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;
+                    font-size:11px;color:var(--text-faint)">
+          <span>נמוך &lt;40%</span><span>בינוני 40-70%</span><span>גבוה ≥70%</span>
+        </div>
+
+        <form method="get" style="margin-top:16px" data-auto-submit>
+          <div class="field">
+            <label for="model">מודל חיזוי</label>
+            <select id="model" name="model">
+              {% for m in models %}
+              <option value="{{ m.key }}" {{ 'selected' if selected_model == m.key }}>
+                {{ m.label }} (ROC-AUC {{ m.metrics.roc_auc }})</option>
+              {% endfor %}
+            </select>
+          </div>
+        </form>
+        <p class="note" style="margin-top:12px">
+          החיזוי מבוסס על מאפיינים הידועים לפני הרכישה בלבד (תקציב, אינטראקציות, מקור, קורס,
+          עיסוק, השכלה, מועד וניסיון קודם). סטטוס הליד ומצב התשלום אינם נכללים כדי למנוע
+          דליפת מידע.
+        </p>
+        {% else %}
+        <div class="empty" style="padding:24px">
+          <div class="empty-title">אין מודל זמין</div>
+          <div>יש להריץ <code>python ml/train_models.py</code>.</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="card-title">משימות מעקב</span></div>
+      <div class="card-body">
+        {% if followups %}
+        {% for f in followups %}
+        <div style="display:flex;justify-content:space-between;gap:8px;padding:7px 0;
+                    border-bottom:1px solid #f1f1f4">
+          <span style="font-size:13px">{{ f.title }}</span>
+          <span class="badge {{ 'green' if f.done else 'amber' }}">
+            {{ 'הושלם' if f.done else f.due_date }}</span>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div style="font-size:13px;color:var(--text-muted)">אין משימות מעקב פתוחות.</div>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if current_user and current_user.role == 'ADMIN' %}
+    <form method="post" action="{{ url_for('leads.delete', lead_id=lead.id) }}">
+      <button class="btn btn-danger" style="width:100%" type="submit">מחיקת הליד</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

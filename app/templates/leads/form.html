@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% set editing = lead.get('id') %}
+{% block title %}{{ 'עריכת ליד' if editing else 'ליד חדש' }} · AIAKILOV CRM{% endblock %}
+{% block heading %}{{ 'עריכת ליד' if editing else 'ליד חדש' }}{% endblock %}
+{% block subheading %}שדות המסומנים בכוכבית הם שדות חובה{% endblock %}
+
+{% block content %}
+{% if errors %}
+<div class="flash error" style="margin-bottom:14px">
+  <ul style="margin:0;padding-inline-start:18px">
+    {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<form class="card" method="post"
+      action="{{ url_for('leads.edit', lead_id=lead.id) if editing else url_for('leads.create') }}">
+  <div class="card-body">
+    <div class="form-grid">
+      <div class="field">
+        <label for="first_name">שם פרטי *</label>
+        <input id="first_name" name="first_name" required value="{{ lead.get('first_name', '') }}">
+      </div>
+      <div class="field">
+        <label for="last_name">שם משפחה *</label>
+        <input id="last_name" name="last_name" required value="{{ lead.get('last_name', '') }}">
+      </div>
+      <div class="field">
+        <label for="email">אימייל</label>
+        <input id="email" name="email" type="email" value="{{ lead.get('email', '') or '' }}">
+      </div>
+      <div class="field">
+        <label for="phone">טלפון</label>
+        <input id="phone" name="phone" value="{{ lead.get('phone', '') or '' }}">
+      </div>
+      <div class="field">
+        <label for="age">גיל</label>
+        <input id="age" name="age" type="number" min="16" max="99"
+               value="{{ lead.get('age', '') or '' }}">
+      </div>
+      <div class="field">
+        <label for="city">עיר</label>
+        <input id="city" name="city" value="{{ lead.get('city', '') or '' }}">
+      </div>
+      <div class="field">
+        <label for="occupation">עיסוק</label>
+        <input id="occupation" name="occupation" value="{{ lead.get('occupation', '') or '' }}">
+      </div>
+      <div class="field">
+        <label for="education">השכלה</label>
+        <select id="education" name="education">
+          <option value="">—</option>
+          {% for e in ['תיכונית', 'הנדסאי', 'תואר ראשון', 'תואר שני', 'דוקטורט'] %}
+          <option value="{{ e }}" {{ 'selected' if lead.get('education') == e }}>{{ e }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="course_interest">קורס מבוקש</label>
+        <select id="course_interest" name="course_interest">
+          <option value="">—</option>
+          {% for c in courses %}
+          <option value="{{ c }}" {{ 'selected' if lead.get('course_interest') == c }}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="lead_source">מקור הליד</label>
+        <select id="lead_source" name="lead_source">
+          <option value="">—</option>
+          {% for s in sources %}
+          <option value="{{ s }}" {{ 'selected' if lead.get('lead_source') == s }}>
+            {{ source_he[s] }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="lead_status">סטטוס</label>
+        <select id="lead_status" name="status">
+          {% for s in statuses %}
+          <option value="{{ s }}" {{ 'selected' if lead.get('status', 'New') == s }}>
+            {{ status_he[s] }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="budget">תקציב (₪)</label>
+        <input id="budget" name="budget" type="number" min="0" step="100"
+               value="{{ lead.get('budget', '') or '' }}">
+      </div>
+      <div class="field">
+        <label for="preferred_schedule">מועד מועדף</label>
+        <select id="preferred_schedule" name="preferred_schedule">
+          <option value="">—</option>
+          {% for s in ['בוקר', 'ערב', 'סופ"ש', 'גמיש'] %}
+          <option value="{{ s }}" {{ 'selected' if lead.get('preferred_schedule') == s }}>
+            {{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="interaction_count">מספר אינטראקציות</label>
+        <input id="interaction_count" name="interaction_count" type="number" min="0"
+               value="{{ lead.get('interaction_count', 0) or 0 }}">
+      </div>
+      <div class="field">
+        <label for="assigned_sales_rep">נציג מכירות</label>
+        <select id="assigned_sales_rep" name="assigned_sales_rep">
+          <option value="">—</option>
+          {% for r in reps %}
+          <option value="{{ r }}" {{ 'selected' if lead.get('assigned_sales_rep') == r }}>
+            {{ r }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="checkbox" style="margin-top:14px">
+      <input id="previous_ai_experience" name="previous_ai_experience" type="checkbox"
+             {{ 'checked' if lead.get('previous_ai_experience') }}>
+      <label for="previous_ai_experience" style="margin:0">ניסיון קודם בתחום ה-AI</label>
+    </div>
+
+    <div class="field" style="margin-top:14px">
+      <label for="notes">הערות</label>
+      <textarea id="notes" name="notes">{{ lead.get('notes', '') or '' }}</textarea>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">
+        {{ 'שמירת שינויים' if editing else 'יצירת ליד' }}<span class="spinner"></span></button>
+      <a class="btn" href="{{ url_for('leads.detail', lead_id=lead.id) if editing else url_for('leads.index') }}">
+        ביטול</a>
+    </div>
+  </div>
+</form>
+{% endblock %}

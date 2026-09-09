@@ -1,0 +1,55 @@
+<form class="card filters" method="get" data-auto-submit>
+  <div class="field grow">
+    <label for="q">חיפוש</label>
+    <input id="q" name="q" value="{{ args.get('q', '') }}" placeholder="שם, אימייל או טלפון">
+  </div>
+  <div class="field">
+    <label for="f-status">סטטוס</label>
+    <select id="f-status" name="status">
+      <option value="">הכל</option>
+      {% for s in statuses %}
+      <option value="{{ s }}" {{ 'selected' if args.get('status') == s }}>{{ status_he[s] }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="f-course">קורס</label>
+    <select id="f-course" name="course">
+      <option value="">הכל</option>
+      {% for c in courses %}
+      <option value="{{ c }}" {{ 'selected' if args.get('course') == c }}>{{ c }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="f-source">מקור</label>
+    <select id="f-source" name="source">
+      <option value="">הכל</option>
+      {% for s in sources %}
+      <option value="{{ s }}" {{ 'selected' if args.get('source') == s }}>{{ source_he[s] }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="f-rep">נציג מכירות</label>
+    <select id="f-rep" name="rep">
+      <option value="">הכל</option>
+      {% for r in reps %}
+      <option value="{{ r }}" {{ 'selected' if args.get('rep') == r }}>{{ r }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  {% if request.endpoint == 'leads.index' %}
+  <div class="field" style="max-width:130px">
+    <label for="f-prob">הסתברות מ־%</label>
+    <input id="f-prob" name="min_prob" type="number" min="0" max="100" step="5"
+           value="{{ args.get('min_prob', '') }}" placeholder="0">
+  </div>
+  {% endif %}
+  <div class="field" style="max-width:150px">
+    <label for="f-from">נוצר מתאריך</label>
+    <input id="f-from" name="from" type="date" value="{{ args.get('from', '') }}">
+  </div>
+  <button class="btn btn-primary" type="submit" data-no-loading>סינון</button>
+  <a class="btn" href="{{ url_for(request.endpoint) }}">איפוס</a>
+</form>

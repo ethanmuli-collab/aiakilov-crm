@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}דשבורד · AIAKILOV CRM{% endblock %}
+{% block heading %}דשבורד{% endblock %}
+{% block subheading %}תמונת מצב של הלידים, ההרשמות וההכנסות באקדמיה{% endblock %}
+{% block actions %}
+  <a class="btn btn-primary" href="{{ url_for('leads.create') }}">+ ליד חדש</a>
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-4" style="margin-bottom:14px">
+  <div class="card kpi">
+    <div class="kpi-label">סה"כ לידים</div>
+    <div class="kpi-value">{{ '{:,}'.format(kpis.total_leads) }}</div>
+    <div class="kpi-hint">מתוכם {{ kpis.new_leads }} חדשים</div>
+  </div>
+  <div class="card kpi">
+    <div class="kpi-label">אחוז המרה</div>
+    <div class="kpi-value">{{ kpis.conversion_rate|pct }}</div>
+    <div class="kpi-hint">לידים שנסגרו בהצלחה</div>
+  </div>
+  <div class="card kpi">
+    <div class="kpi-label">תלמידים רשומים</div>
+    <div class="kpi-value">{{ '{:,}'.format(kpis.students) }}</div>
+    <div class="kpi-hint">{{ kpis.open_followups }} משימות מעקב פתוחות</div>
+  </div>
+  <div class="card kpi">
+    <div class="kpi-label">הכנסות (שולם)</div>
+    <div class="kpi-value">{{ kpis.revenue|ils }}</div>
+    <div class="kpi-hint">מחיר קורס ממוצע {{ kpis.avg_course_price|ils }}</div>
+  </div>
+</div>
+
+<div class="grid grid-2" style="margin-bottom:14px">
+  <div class="card">
+    <div class="card-head"><span class="card-title">לידים לאורך זמן</span>
+      <span class="card-hint">לפי חודש יצירה</span></div>
+    <div class="card-body"><div class="chart-box"><canvas id="chLeads"></canvas></div></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-title">הכנסות לאורך זמן</span>
+      <span class="card-hint">הרשמות ששולמו</span></div>
+    <div class="card-body"><div class="chart-box"><canvas id="chRevenue"></canvas></div></div>
+  </div>
+</div>
+
+<div class="grid grid-3" style="margin-bottom:14px">
+  <div class="card">
+    <div class="card-head"><span class="card-title">המרה לפי מקור</span>
+      <span class="card-hint">%</span></div>
+    <div class="card-body"><div class="chart-box"><canvas id="chSource"></canvas></div></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-title">לידים לפי סטטוס</span></div>
+    <div class="card-body"><div class="chart-box"><canvas id="chStatus"></canvas></div></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-title">קורסים מובילים</span>
+      <span class="card-hint">לפי עניין</span></div>
+    <div class="card-body"><div class="chart-box"><canvas id="chCourse"></canvas></div></div>
+  </div>
+</div>
+
+<div class="grid grid-2">
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">צינור המכירות</span>
+      <a class="btn btn-sm" href="{{ url_for('leads.kanban') }}">פתיחת קנבן</a>
+    </div>
+    <div class="card-body" style="display:flex;flex-direction:column;gap:9px">
+      {% set max_count = (pipeline | map(attribute='count') | max) or 1 %}
+      {% for step in pipeline %}
+      <a href="{{ url_for('leads.index', status=step.status) }}"
+         style="display:flex;align-items:center;gap:10px">
+        <span style="width:96px;font-size:12.5px;color:var(--text-muted)">{{ step.label }}</span>
+        <span class="prob-bar" style="height:16px;border-radius:6px">
+          <span class="prob-fill" style="background:var(--accent);border-radius:6px;
+                width:{{ (step.count / max_count * 100) | round(1) }}%"></span>
+        </span>
+        <span class="num" style="width:52px;text-align:left;font-weight:600">
+          {{ '{:,}'.format(step.count) }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">התפלגות הסתברות רכישה (ML)</span>
+      <span class="card-hint">
+        מודל: {{ metrics.models.get(best_model, {}).get('label', 'לא זמין') }}</span>
+    </div>
+    <div class="card-body">
+      <div class="chart-box" style="height:190px"><canvas id="chMl"></canvas></div>
+      <p class="note" style="margin-top:12px">
+        מחושב על 500 הלידים האחרונים באמצעות המודל הנבחר. בחירת המודל הנבחר מתבצעת לפי
+        ROC-AUC ולא לפי דיוק בלבד.
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+  const D = {{ charts | tojson }};
+  AIA.line('chLeads', D.leads_over_time);
+  AIA.line('chRevenue', D.revenue_over_time, '#16794c');
+  AIA.bar('chSource', D.conversion_by_source, '#5b5bd6');
+  AIA.doughnut('chStatus', D.leads_by_status);
+  AIA.bar('chCourse', D.leads_by_course, '#7c3aed', true);
+  AIA.bar('chMl', D.ml_distribution, '#0e7490');
+</script>
+{% endblock %}

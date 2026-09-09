@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}קנבן לידים · AIAKILOV CRM{% endblock %}
+{% block heading %}צינור המכירות{% endblock %}
+{% block subheading %}גרירה בין העמודות מעדכנת את סטטוס הליד בשרת{% endblock %}
+{% block actions %}
+  <div class="seg">
+    <a href="{{ url_for('leads.index', **args) }}">טבלה</a>
+    <a class="active" href="{{ url_for('leads.kanban', **args) }}">קנבן</a>
+  </div>
+  <a class="btn btn-primary" href="{{ url_for('leads.create') }}">+ ליד חדש</a>
+{% endblock %}
+
+{% block content %}
+{% include "leads/_filters.html" %}
+
+<div class="kanban" id="kanban">
+  {% for status, items in columns.items() %}
+  <section class="kanban-col" data-status="{{ status }}">
+    <header class="kanban-head">
+      <span>{{ status_he[status] }}</span>
+      <span class="kanban-count">{{ counts.get(status, 0) }}</span>
+    </header>
+    <div class="kanban-items" style="display:flex;flex-direction:column;gap:8px">
+      {% for lead in items %}
+      <article class="kanban-card" data-lead-id="{{ lead.id }}">
+        <a href="{{ url_for('leads.detail', lead_id=lead.id) }}">
+          <div class="kc-name">{{ lead.first_name }} {{ lead.last_name }}</div>
+          <div class="kc-meta">{{ lead.course_interest or 'ללא קורס' }}</div>
+          <div class="kc-foot">
+            <span class="badge">{{ source_he.get(lead.lead_source, lead.lead_source or '—') }}</span>
+            <span class="num" style="font-size:11.5px;color:var(--text-muted)">
+              {{ lead.budget|ils if lead.budget else '—' }}</span>
+          </div>
+        </a>
+      </article>
+      {% else %}
+      <div style="font-size:12px;color:var(--text-faint);padding:10px;text-align:center">
+        אין לידים בשלב זה
+      </div>
+      {% endfor %}
+      {% if counts.get(status, 0) > items|length %}
+      <a class="btn btn-sm btn-ghost" href="{{ url_for('leads.index', status=status) }}">
+        עוד {{ counts.get(status, 0) - items|length }} לידים →</a>
+      {% endif %}
+    </div>
+  </section>
+  {% endfor %}
+</div>
+
+<p class="note" style="margin-top:14px">
+  לכל עמודה מוצגים עד 20 כרטיסים כדי לשמור על ביצועים מול 10,000 לידים. לרשימה המלאה של שלב
+  מסוים יש ללחוץ על הקישור בתחתית העמודה.
+</p>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/kanban.js') }}"></script>
+{% endblock %}

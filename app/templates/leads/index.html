@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}לידים · AIAKILOV CRM{% endblock %}
+{% block heading %}לידים{% endblock %}
+{% block subheading %}{{ '{:,}'.format(total) }} לידים בסך הכל{% endblock %}
+{% block actions %}
+  <div class="seg">
+    <a class="active" href="{{ url_for('leads.index', **args) }}">טבלה</a>
+    <a href="{{ url_for('leads.kanban', **args) }}">קנבן</a>
+  </div>
+  <a class="btn btn-primary" href="{{ url_for('leads.create') }}">+ ליד חדש</a>
+{% endblock %}
+
+{% block content %}
+{% include "leads/_filters.html" %}
+
+<div class="card">
+  {% if leads %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>שם</th><th>קורס</th><th>מקור</th><th>סטטוס</th>
+          <th>תקציב</th><th>אינטראקציות</th><th>הסתברות רכישה</th><th>נציג</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for lead in leads %}
+        {% set p = lead.prediction or {} %}
+        <tr>
+          <td>
+            <a href="{{ url_for('leads.detail', lead_id=lead.id) }}" style="font-weight:600">
+              {{ lead.first_name }} {{ lead.last_name }}</a>
+            <div style="font-size:11.5px;color:var(--text-faint)">{{ lead.email }}</div>
+          </td>
+          <td>{{ lead.course_interest or '—' }}</td>
+          <td>{{ source_he.get(lead.lead_source, lead.lead_source or '—') }}</td>
+          <td>
+            <span class="badge {{ 'green' if lead.status == 'Won' else 'red' if lead.status == 'Lost' else 'blue' if lead.status == 'New' else '' }}">
+              <span class="dot"></span>{{ status_he.get(lead.status, lead.status) }}</span>
+          </td>
+          <td class="num">{{ lead.budget|ils if lead.budget else '—' }}</td>
+          <td class="num">{{ lead.interaction_count }}</td>
+          <td>
+            {% if p.percent is defined %}
+            <div class="prob-cell">
+              <span class="prob-bar"><span class="prob-fill {{ p.level }}"
+                    style="width:{{ p.percent }}%"></span></span>
+              <span class="prob-val">{{ p.percent }}%</span>
+            </div>
+            {% else %}<span style="color:var(--text-faint)">—</span>{% endif %}
+          </td>
+          <td>{{ lead.assigned_sales_rep or '—' }}</td>
+          <td><a class="btn btn-sm" href="{{ url_for('leads.detail', lead_id=lead.id) }}">פתיחה</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pages > 1 %}
+  <div class="pagination">
+    {% set qs = args.to_dict() %}{% set _ = qs.pop('page', None) %}
+    {% if page > 1 %}
+      <a class="btn btn-sm" href="{{ url_for('leads.index', page=page-1, **qs) }}">הקודם</a>
+    {% endif %}
+    <span style="font-size:12.5px;color:var(--text-muted)">עמוד {{ page }} מתוך {{ pages }}</span>
+    {% if page < pages %}
+      <a class="btn btn-sm" href="{{ url_for('leads.index', page=page+1, **qs) }}">הבא</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="empty">
+    <div class="empty-title">לא נמצאו לידים</div>
+    <div>נסה לשנות את הסינון או ליצור ליד חדש.</div>
+    <a class="btn btn-primary" style="margin-top:14px" href="{{ url_for('leads.create') }}">+ ליד חדש</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
