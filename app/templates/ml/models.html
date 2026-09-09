@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block title %}מודלים · AIAKILOV CRM{% endblock %}
+{% block heading %}השוואת מודלים{% endblock %}
+{% block subheading %}
+  {{ metrics.dataset.rows or 0 }} רשומות · חלוקה {{ ((1 - (metrics.dataset.test_size or 0.2)) * 100)|int }}/{{ ((metrics.dataset.test_size or 0.2) * 100)|int }} סטרטיפיקטיבית · random_state={{ metrics.dataset.random_state }}
+{% endblock %}
+{% block actions %}
+  <a class="btn btn-primary" href="{{ url_for('predictions.predict') }}">חיזוי ידני</a>
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-4" style="margin-bottom:14px">
+  <div class="card kpi">
+    <div class="kpi-label">המודל הנבחר</div>
+    <div class="kpi-value" style="font-size:19px">
+      {{ metrics.models.get(best, {}).get('label', '—') }}</div>
+    <div class="kpi-hint">נבחר לפי {{ metrics.selection_criterion or 'ROC-AUC' }}</div>
+  </div>
+  <div class="card kpi">
+    <div class="kpi-label">רשומות אימון / בדיקה</div>
+    <div class="kpi-value">
+      {{ '{:,}'.format(metrics.dataset.train_rows or 0) }}
+      <span style="font-size:15px;color:var(--text-faint)">/
+        {{ '{:,}'.format(metrics.dataset.test_rows or 0) }}</span></div>
+    <div class="kpi-hint">חלוקה שומרת יחס מחלקות</div>
+  </div>
+  <div class="card kpi">
+    <div class="kpi-label">שיעור רכישה בנתונים</div>
+    <div class="kpi-value">{{ (metrics.dataset.positive_rate or 0)|pct }}</div>
+    <div class="kpi-hint">חוסר איזון מחלקות מכוון</div>
+  </div>
+  <div class="card kpi">
+    <div class="kpi-label">מודלים שאומנו</div>
+    <div class="kpi-value">
+      {{ models | selectattr('status', 'equalto', 'trained') | list | length }}
+      <span style="font-size:15px;color:var(--text-faint)">/ {{ models|length }}</span></div>
+    <div class="kpi-hint">מודלים לא זמינים מדולגים בבטחה</div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:14px">
+  <div class="card-head">
+    <span class="card-title">טבלת השוואה</span>
+    <span class="card-hint">בחירה בשורה מציגה פירוט מלא</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>מודל</th><th>Accuracy</th><th>Precision</th><th>Recall</th>
+          <th>F1</th><th>ROC-AUC</th><th>Log Loss</th>
+          <th style="color:var(--amber)">MAE*</th>
+          <th style="color:var(--amber)">RMSE*</th>
+          <th style="color:var(--amber)">R²*</th>
+          <th>סטטוס</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in models %}
+        <tr {% if m.key == best %}style="background:var(--accent-soft)"{% endif %}>
+          <td style="font-weight:600">
+            {{ m.label }}
+            {% if m.key == best %}<span class="badge blue" style="margin-inline-start:6px">נבחר</span>{% endif %}
+          </td>
+          {% if m.status == 'trained' %}
+          <td class="num">{{ m.metrics.accuracy }}</td>
+          <td class="num">{{ m.metrics.precision }}</td>
+          <td class="num">{{ m.metrics.recall }}</td>
+          <td class="num">{{ m.metrics.f1 }}</td>
+          <td class="num" style="font-weight:650">{{ m.metrics.roc_auc }}</td>
+          <td class="num">{{ m.metrics.log_loss }}</td>
+          <td class="num" style="color:var(--text-muted)">{{ m.metrics.mae }}</td>
+          <td class="num" style="color:var(--text-muted)">{{ m.metrics.rmse }}</td>
+          <td class="num" style="color:var(--text-muted)">{{ m.metrics.r2 }}</td>
+          <td><span class="badge green"><span class="dot"></span>אומן</span></td>
+          <td><a class="btn btn-sm" href="{{ url_for('predictions.models', model=m.key) }}">פירוט</a></td>
+          {% else %}
+          <td colspan="9" style="color:var(--text-faint);font-size:12px">
+            {{ m.reason | truncate(90) }}</td>
+          <td><span class="badge red"><span class="dot"></span>
+            {{ 'לא זמין' if m.status == 'unavailable' else 'נכשל' }}</span></td>
+          <td></td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-body" style="border-top:1px solid var(--border)">
+    <p class="note warn" style="margin:0">
+      <strong>* מדדי רגרסיה - חינוכיים בלבד.</strong>
+      MAE, RMSE ובמיוחד R² חושבו בין התווית הבינארית לבין ההסתברות החזויה, לצורך השוואה
+      לימודית מול מדדי רגרסיה שנלמדו בכיתה. הם <strong>אינם</strong> המדדים הראשיים למשימת
+      סיווג בינארי, ובחירת המודל הטוב ביותר אינה מתבצעת לפיהם - אלא לפי ROC-AUC (ושובר שוויון F1).
+    </p>
+  </div>
+</div>
+
+{% if selected and selected.status == 'trained' %}
+<div class="grid grid-2">
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">מטריצת בלבול · {{ selected.label }}</span>
+      <span class="card-hint">סף 0.5</span>
+    </div>
+    <div class="card-body">
+      {% set cm = selected.metrics.confusion_matrix %}
+      <table style="text-align:center">
+        <thead>
+          <tr><th></th><th style="text-align:center">חזוי: לא רכש</th>
+              <th style="text-align:center">חזוי: רכש</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-weight:600;text-align:right">בפועל: לא רכש</td>
+            <td class="num" style="background:var(--green-soft);font-weight:650">{{ cm[0][0] }}</td>
+            <td class="num" style="background:var(--red-soft)">{{ cm[0][1] }}</td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;text-align:right">בפועל: רכש</td>
+            <td class="num" style="background:var(--red-soft)">{{ cm[1][0] }}</td>
+            <td class="num" style="background:var(--green-soft);font-weight:650">{{ cm[1][1] }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="note" style="margin-top:12px">
+        Brier score: {{ selected.metrics.brier }} — מודד את איכות הכיול של ההסתברויות.
+      </p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">מאפיינים משפיעים</span>
+      <span class="card-hint">
+        {{ 'חשיבות מאפיינים' if selected.feature_importance and
+           selected.feature_importance[0].kind == 'importance' else 'מקדמי רגרסיה' }}</span>
+    </div>
+    <div class="card-body">
+      {% if selected.feature_importance %}
+      {% set maxv = selected.feature_importance | map(attribute='value')
+                    | map('abs') | max %}
+      <div style="display:flex;flex-direction:column;gap:7px">
+        {% for f in selected.feature_importance %}
+        <div style="display:flex;align-items:center;gap:9px">
+          <span style="width:160px;font-size:12px;color:var(--text-muted);
+                       overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+                title="{{ f.feature }}">{{ f.feature }}</span>
+          <span class="prob-bar">
+            <span class="prob-fill" style="width:{{ (f.value|abs / maxv * 100)|round(1) }}%;
+                  background:{{ 'var(--green)' if f.value >= 0 else 'var(--red)' }}"></span>
+          </span>
+          <span class="num" style="width:56px;text-align:left;font-size:11.5px">{{ f.value }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="font-size:13px;color:var(--text-muted)">לא זמין עבור מודל זה.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="card" style="margin-top:14px">
+  <div class="card-head"><span class="card-title">מניעת דליפת מידע ועיבוד מקדים</span></div>
+  <div class="card-body grid grid-2">
+    <div>
+      <h3 style="margin-bottom:8px">מאפיינים בשימוש</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">
+        {% for f in (metrics.features.numeric or []) %}
+        <span class="badge blue">{{ f }}</span>{% endfor %}
+        {% for f in (metrics.features.categorical or []) %}
+        <span class="badge">{{ f }}</span>{% endfor %}
+      </div>
+    </div>
+    <div>
+      <h3 style="margin-bottom:8px">מאפיינים שהוצאו במכוון (דליפה)</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">
+        {% for f in (metrics.features.excluded_leaky or []) %}
+        <span class="badge red">{{ f }}</span>{% endfor %}
+      </div>
+      <p class="note" style="margin-top:10px">
+        שדות אלה נחשפים רק אחרי הרכישה ולכן היו חושפים את התווית ישירות.
+        כל שלבי העיבוד המקדים (השלמת חסרים, סקיילינג, One-Hot) מאומנים בתוך Pipeline
+        על סט האימון בלבד.
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}הרשמות · AIAKILOV CRM{% endblock %}
+{% block heading %}הרשמות{% endblock %}
+{% block subheading %}{{ '{:,}'.format(totals.n) }} הרשמות בסך הכל{% endblock %}
+
+{% block content %}
+<div class="grid grid-3" style="margin-bottom:14px">
+  <div class="card kpi"><div class="kpi-label">סה"כ הרשמות</div>
+    <div class="kpi-value">{{ '{:,}'.format(totals.n) }}</div></div>
+  <div class="card kpi"><div class="kpi-label">הכנסות ששולמו</div>
+    <div class="kpi-value">{{ totals.paid|ils }}</div></div>
+  <div class="card kpi"><div class="kpi-label">ממתין לתשלום</div>
+    <div class="kpi-value">{{ totals.pending|ils }}</div></div>
+</div>
+
+<form class="card filters" method="get" data-auto-submit>
+  <div class="field">
+    <label for="ps">סטטוס תשלום</label>
+    <select id="ps" name="payment_status">
+      <option value="">הכל</option>
+      {% for p in payment_statuses %}
+      <option value="{{ p }}" {{ 'selected' if selected == p }}>{{ payment_he[p] }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <a class="btn" href="{{ url_for('enrollments.index') }}">איפוס</a>
+</form>
+
+<div class="card">
+  {% if enrollments %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>תלמיד</th><th>קורס</th><th>תאריך</th><th>מחיר</th>
+                 <th>סטטוס תשלום</th><th>חשבונית</th></tr></thead>
+      <tbody>
+        {% for e in enrollments %}
+        <tr>
+          <td><a href="{{ url_for('students.detail', student_id=e.student_id) }}"
+                 style="font-weight:600">{{ e.first_name }} {{ e.last_name }}</a></td>
+          <td>{{ e.course_name }}</td>
+          <td class="num">{{ e.enrollment_date }}</td>
+          <td class="num">{{ e.price|ils }}</td>
+          <td>
+            <form method="post" action="{{ url_for('enrollments.set_payment', enrollment_id=e.id) }}"
+                  style="display:flex;gap:5px;align-items:center">
+              <select name="payment_status" style="width:auto;font-size:12px;padding:3px 7px">
+                {% for p in payment_statuses %}
+                <option value="{{ p }}" {{ 'selected' if e.payment_status == p }}>
+                  {{ payment_he[p] }}</option>
+                {% endfor %}
+              </select>
+              <button class="btn btn-sm" type="submit" data-no-loading>שמור</button>
+            </form>
+          </td>
+          <td>
+            {% if e.invoice_id %}
+            <a class="btn btn-sm" target="_blank"
+               href="{{ url_for('enrollments.invoice', invoice_id=e.invoice_id) }}">הצג</a>
+            {% else %}<span style="color:var(--text-faint)">—</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if pages > 1 %}
+  <div class="pagination">
+    {% if page > 1 %}
+    <a class="btn btn-sm"
+       href="{{ url_for('enrollments.index', page=page-1, payment_status=selected) }}">הקודם</a>{% endif %}
+    <span style="font-size:12.5px;color:var(--text-muted)">עמוד {{ page }} מתוך {{ pages }}</span>
+    {% if page < pages %}
+    <a class="btn btn-sm"
+       href="{{ url_for('enrollments.index', page=page+1, payment_status=selected) }}">הבא</a>{% endif %}
+  </div>
+  {% endif %}
+  {% else %}
+  <div class="empty"><div class="empty-title">אין הרשמות להצגה</div></div>
+  {% endif %}
+</div>
+{% endblock %}

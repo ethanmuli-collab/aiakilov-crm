@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}תלמידים · AIAKILOV CRM{% endblock %}
+{% block heading %}תלמידים{% endblock %}
+{% block subheading %}{{ '{:,}'.format(total) }} תלמידים רשומים{% endblock %}
+
+{% block content %}
+<form class="card filters" method="get">
+  <div class="field grow">
+    <label for="q">חיפוש</label>
+    <input id="q" name="q" value="{{ q }}" placeholder="שם או אימייל">
+  </div>
+  <button class="btn btn-primary" type="submit" data-no-loading>חיפוש</button>
+  <a class="btn" href="{{ url_for('students.index') }}">איפוס</a>
+</form>
+
+<div class="card">
+  {% if students %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>שם</th><th>אימייל</th><th>טלפון</th><th>עיר</th>
+                 <th>קורסים</th><th>שולם</th><th></th></tr></thead>
+      <tbody>
+        {% for s in students %}
+        <tr>
+          <td><a href="{{ url_for('students.detail', student_id=s.id) }}"
+                 style="font-weight:600">{{ s.first_name }} {{ s.last_name }}</a></td>
+          <td style="color:var(--text-muted)">{{ s.email }}</td>
+          <td class="num">{{ s.phone }}</td>
+          <td>{{ s.city }}</td>
+          <td class="num">{{ s.courses }}</td>
+          <td class="num">{{ s.paid|ils }}</td>
+          <td><a class="btn btn-sm"
+                 href="{{ url_for('students.detail', student_id=s.id) }}">פתיחה</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if pages > 1 %}
+  <div class="pagination">
+    {% if page > 1 %}
+    <a class="btn btn-sm" href="{{ url_for('students.index', page=page-1, q=q) }}">הקודם</a>{% endif %}
+    <span style="font-size:12.5px;color:var(--text-muted)">עמוד {{ page }} מתוך {{ pages }}</span>
+    {% if page < pages %}
+    <a class="btn btn-sm" href="{{ url_for('students.index', page=page+1, q=q) }}">הבא</a>{% endif %}
+  </div>
+  {% endif %}
+  {% else %}
+  <div class="empty"><div class="empty-title">לא נמצאו תלמידים</div>
+    <div>תלמידים נוצרים מהמרת ליד שנסגר בהצלחה.</div></div>
+  {% endif %}
+</div>
+{% endblock %}

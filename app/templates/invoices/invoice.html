@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}חשבונית {{ inv.invoice_number }} · AIAKILOV CRM{% endblock %}
+{% block heading %}חשבונית {{ inv.invoice_number }}{% endblock %}
+{% block subheading %}מסמך הדגמה לצורכי לימוד בלבד{% endblock %}
+{% block actions %}
+  <button class="btn btn-primary no-print" onclick="window.print()" data-no-loading>הדפסה</button>
+{% endblock %}
+
+{% block content %}
+<div class="invoice-sheet">
+  <div style="display:flex;justify-content:space-between;align-items:start;
+              padding-bottom:20px;border-bottom:2px solid var(--text)">
+    <div style="display:flex;gap:11px;align-items:center">
+      <div class="brand-mark" style="width:38px;height:38px;font-size:15px">AI</div>
+      <div>
+        <div style="font-weight:700;font-size:17px">AIAKILOV</div>
+        <div style="font-size:12px;color:var(--text-muted)">אקדמיה מקוונת לבינה מלאכותית</div>
+      </div>
+    </div>
+    <div style="text-align:left">
+      <div style="font-weight:700;font-size:15px">חשבונית / קבלה (הדגמה)</div>
+      <div class="num" style="font-size:12.5px;color:var(--text-muted)">
+        מספר: {{ inv.invoice_number }}</div>
+      <div class="num" style="font-size:12.5px;color:var(--text-muted)">
+        תאריך: {{ inv.issue_date }}</div>
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:space-between;gap:24px;padding:22px 0">
+    <div>
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;
+                  color:var(--text-faint);font-weight:600">לכבוד</div>
+      <div style="font-weight:650;margin-top:5px">
+        {{ inv.first_name }} {{ inv.last_name }}</div>
+      <div style="font-size:12.5px;color:var(--text-muted)">{{ inv.email }}</div>
+      <div style="font-size:12.5px;color:var(--text-muted)">{{ inv.city }}</div>
+    </div>
+    <div style="text-align:left">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;
+                  color:var(--text-faint);font-weight:600">סטטוס תשלום</div>
+      <div style="margin-top:5px">
+        <span class="badge {{ 'green' if inv.payment_status == 'paid' else 'amber' }}">
+          {{ payment_he.get(inv.payment_status, inv.payment_status) }}</span>
+      </div>
+    </div>
+  </div>
+
+  <table style="margin-bottom:20px">
+    <thead><tr><th>תיאור</th><th style="text-align:left">כמות</th>
+               <th style="text-align:left">סכום</th></tr></thead>
+    <tbody>
+      <tr>
+        <td style="font-weight:600">קורס: {{ inv.course_name }}</td>
+        <td class="num" style="text-align:left">1</td>
+        <td class="num" style="text-align:left">{{ inv.amount|ils }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div style="display:flex;justify-content:flex-start">
+    <div style="min-width:230px">
+      <div style="display:flex;justify-content:space-between;padding:7px 0;
+                  border-top:1px solid var(--border)">
+        <span style="color:var(--text-muted)">סה"כ לתשלום</span>
+        <span class="num" style="font-weight:700;font-size:16px">{{ inv.amount|ils }}</span>
+      </div>
+    </div>
+  </div>
+
+  <p class="note warn" style="margin-top:26px">
+    <strong>הבהרה.</strong> מסמך זה הופק על ידי מערכת CRM לימודית לצורכי הדגמה אקדמית בלבד.
+    אין מדובר בחשבונית מס או קבלה בעלת תוקף חוקי לפי דיני המס בישראל, ואין לעשות בו שימוש
+    חשבונאי או משפטי כלשהו.
+  </p>
+</div>
+{% endblock %}

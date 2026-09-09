@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}הגדרות · AIAKILOV CRM{% endblock %}
+{% block heading %}הגדרות{% endblock %}
+{% block subheading %}מצב המערכת, משתמשים והרשאות{% endblock %}
+
+{% block content %}
+<div class="grid grid-2" style="align-items:start">
+  <div class="grid" style="gap:14px">
+    <div class="card">
+      <div class="card-head"><span class="card-title">חיבור Supabase</span></div>
+      <div class="card-body">
+        <dl class="dl">
+          <dt>מוגדר</dt>
+          <dd><span class="badge {{ 'green' if supabase.configured else 'amber' }}">
+            {{ 'כן' if supabase.configured else 'לא מוגדר' }}</span></dd>
+          <dt>פרויקט</dt><dd>{{ supabase.url_host or '—' }}</dd>
+          <dt>מפתח anon</dt>
+          <dd>{{ 'קיים' if supabase.anon_key_present else 'חסר' }}</dd>
+          <dt>Client פעיל</dt>
+          <dd>{{ 'כן' if supabase.client_ready else 'לא' }}</dd>
+        </dl>
+        <p class="note" style="margin-top:12px">
+          המערכת רצה במצב הדגמה מעל SQLite מקומי כדי שההדגמה לא תלויה בקונפיגורציה חיצונית.
+          סכמת ה-SQL המלאה נמצאת ב-<code>database/schema.sql</code> וכל האובייקטים מבודדים
+          בקידומת <code>aiakilov_</code>. אין הצגה של מפתחות או סודות בעמוד זה.
+        </p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="card-title">מודל ML פעיל</span></div>
+      <div class="card-body">
+        <dl class="dl">
+          <dt>מודל נבחר</dt>
+          <dd>{{ metrics.models.get(metrics.best_model, {}).get('label', '—') }}</dd>
+          <dt>קריטריון בחירה</dt><dd>{{ metrics.selection_criterion or '—' }}</dd>
+          <dt>רשומות</dt><dd class="num">{{ '{:,}'.format(metrics.dataset.rows or 0) }}</dd>
+          <dt>אומן בתאריך</dt>
+          <dd class="num">{{ (metrics.generated_at or '')[:10] }}</dd>
+        </dl>
+        <a class="btn btn-sm" style="margin-top:12px"
+           href="{{ url_for('predictions.models') }}">לעמוד המודלים</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-title">משתמשי מערכת והרשאות</span>
+      <span class="card-hint">CRM פנימי בלבד</span></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>שם</th><th>אימייל</th><th>תפקיד</th></tr></thead>
+        <tbody>
+          {% for p in profiles %}
+          <tr>
+            <td style="font-weight:600">{{ p.full_name }}</td>
+            <td style="color:var(--text-muted)">{{ p.email }}</td>
+            <td><span class="badge {{ 'blue' if p.role == 'ADMIN' }}">
+              {{ role_he.get(p.role, p.role) }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="card-body" style="border-top:1px solid var(--border)">
+      <p class="note" style="margin:0">
+        תלמידים אינם משתמשי מערכת אלא רשומות עסקיות. שכבת ההרשאות מוגדרת ב-
+        <code>app/services/auth_service.py</code> כמיפוי שטוח בין הרשאה לתפקידים.
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

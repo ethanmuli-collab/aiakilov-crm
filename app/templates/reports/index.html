@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}דוחות · AIAKILOV CRM{% endblock %}
+{% block heading %}דוחות{% endblock %}
+{% block subheading %}ביצועי מקורות, נציגים וקורסים{% endblock %}
+
+{% block content %}
+<div class="grid grid-2" style="margin-bottom:14px">
+  <div class="card">
+    <div class="card-head"><span class="card-title">אחוז המרה לפי מקור</span></div>
+    <div class="card-body"><div class="chart-box"><canvas id="chSrc"></canvas></div></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-title">הכנסות לפי קורס</span></div>
+    <div class="card-body"><div class="chart-box"><canvas id="chRev"></canvas></div></div>
+  </div>
+</div>
+
+<div class="grid grid-2" style="margin-bottom:14px">
+  <div class="card">
+    <div class="card-head"><span class="card-title">ביצועים לפי מקור ליד</span></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>מקור</th><th>לידים</th><th>נסגרו</th><th>המרה</th><th>תקציב ממוצע</th></tr></thead>
+        <tbody>
+          {% for r in by_source %}
+          <tr>
+            <td style="font-weight:600">{{ source_he.get(r.src, r.src) }}</td>
+            <td class="num">{{ '{:,}'.format(r.total) }}</td>
+            <td class="num">{{ r.won }}</td>
+            <td><span class="badge {{ 'green' if r.rate >= 0.3 else 'amber' if r.rate >= 0.2 }}">
+              {{ r.rate|pct }}</span></td>
+            <td class="num">{{ r.avg_budget|ils if r.avg_budget else '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-title">ביצועי נציגי מכירות</span></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>נציג</th><th>לידים</th><th>נסגרו</th><th>המרה</th></tr></thead>
+        <tbody>
+          {% for r in by_rep %}
+          <tr>
+            <td style="font-weight:600">{{ r.rep }}</td>
+            <td class="num">{{ '{:,}'.format(r.total) }}</td>
+            <td class="num">{{ r.won }}</td>
+            <td><span class="badge {{ 'green' if r.rate >= 0.3 else 'amber' if r.rate >= 0.2 }}">
+              {{ r.rate|pct }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-2">
+  <div class="card">
+    <div class="card-head"><span class="card-title">ביצועי קורסים</span></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>קורס</th><th>מחיר</th><th>לידים</th><th>נרשמו</th><th>הכנסות</th></tr></thead>
+        <tbody>
+          {% for c in by_course %}
+          <tr>
+            <td style="font-weight:600">{{ c.name }}</td>
+            <td class="num">{{ c.price|ils }}</td>
+            <td class="num">{{ '{:,}'.format(c.leads) }}</td>
+            <td class="num">{{ c.enrolled }}</td>
+            <td class="num" style="font-weight:600">{{ c.revenue|ils }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-title">פילוח תשלומים</span></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>סטטוס</th><th>הרשמות</th><th>סכום</th></tr></thead>
+        <tbody>
+          {% for p in payments %}
+          <tr>
+            <td><span class="badge {{ 'green' if p.ps == 'paid'
+                                    else 'red' if p.ps == 'failed' else 'amber' }}">
+              {{ payment_he.get(p.ps, p.ps) }}</span></td>
+            <td class="num">{{ p.n }}</td>
+            <td class="num">{{ p.amount|ils }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+  const D = {{ charts | tojson }};
+  AIA.bar('chSrc', D.source_conversion, '#5b5bd6');
+  AIA.bar('chRev', D.course_revenue, '#16794c', true);
+</script>
+{% endblock %}

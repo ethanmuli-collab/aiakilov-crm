@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}{{ student.first_name }} {{ student.last_name }} · AIAKILOV CRM{% endblock %}
+{% block heading %}{{ student.first_name }} {{ student.last_name }}{% endblock %}
+{% block subheading %}כרטיס תלמיד · {{ enrollments|length }} הרשמות{% endblock %}
+
+{% block content %}
+<div class="grid" style="grid-template-columns:minmax(0,1fr) minmax(0,2fr);align-items:start">
+  <div class="card">
+    <div class="card-head"><span class="card-title">פרטי קשר</span></div>
+    <div class="card-body">
+      <dl class="dl">
+        <dt>אימייל</dt><dd>{{ student.email or '—' }}</dd>
+        <dt>טלפון</dt><dd class="num">{{ student.phone or '—' }}</dd>
+        <dt>עיר</dt><dd>{{ student.city or '—' }}</dd>
+        <dt>נוצר</dt><dd class="num">{{ student.created_at[:10] }}</dd>
+      </dl>
+      {% if student.lead_id %}
+      <a class="btn btn-sm" style="margin-top:14px"
+         href="{{ url_for('leads.detail', lead_id=student.lead_id) }}">← לליד המקורי</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="grid" style="gap:14px">
+    <div class="card">
+      <div class="card-head"><span class="card-title">הרשמות לקורסים</span></div>
+      {% if enrollments %}
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>קורס</th><th>מרצה</th><th>תאריך</th><th>מחיר</th><th>תשלום</th></tr></thead>
+          <tbody>
+            {% for e in enrollments %}
+            <tr>
+              <td style="font-weight:600">{{ e.course_name }}</td>
+              <td style="color:var(--text-muted)">{{ e.lecturer }}</td>
+              <td class="num">{{ e.enrollment_date }}</td>
+              <td class="num">{{ e.price|ils }}</td>
+              <td><span class="badge {{ 'green' if e.payment_status == 'paid'
+                                      else 'red' if e.payment_status == 'failed' else 'amber' }}">
+                {{ payment_he.get(e.payment_status, e.payment_status) }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty" style="padding:24px"><div class="empty-title">אין הרשמות</div></div>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="card-title">חשבוניות הדגמה</span>
+        <span class="card-hint">מסמכים לימודיים בלבד</span></div>
+      {% if invoices %}
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>מספר</th><th>קורס</th><th>תאריך</th><th>סכום</th><th>סטטוס</th><th></th></tr></thead>
+          <tbody>
+            {% for i in invoices %}
+            <tr>
+              <td class="num" style="font-weight:600">{{ i.invoice_number }}</td>
+              <td>{{ i.course_name }}</td>
+              <td class="num">{{ i.issue_date }}</td>
+              <td class="num">{{ i.amount|ils }}</td>
+              <td><span class="badge {{ 'green' if i.payment_status == 'paid' else 'amber' }}">
+                {{ payment_he.get(i.payment_status, i.payment_status) }}</span></td>
+              <td><a class="btn btn-sm" target="_blank"
+                     href="{{ url_for('enrollments.invoice', invoice_id=i.id) }}">צפייה</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty" style="padding:24px"><div class="empty-title">אין חשבוניות</div></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

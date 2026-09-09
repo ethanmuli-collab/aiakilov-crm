@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}חיזוי · AIAKILOV CRM{% endblock %}
+{% block heading %}חיזוי הסתברות רכישה{% endblock %}
+{% block subheading %}הזנת פרופיל ליד וקבלת הסתברות מהמודל הנבחר{% endblock %}
+
+{% block content %}
+<div class="grid" style="grid-template-columns:minmax(0,2fr) minmax(0,1fr);align-items:start">
+  <form class="card" method="post">
+    <div class="card-body">
+      <div class="form-grid">
+        <div class="field">
+          <label for="model">מודל</label>
+          <select id="model" name="model">
+            {% for m in models %}
+            <option value="{{ m.key }}" {{ 'selected' if form.get('model') == m.key
+                                            or (not form and m.key == best) }}>
+              {{ m.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="age">גיל</label>
+          <input id="age" name="age" type="number" min="16" max="99"
+                 value="{{ form.get('age', 30) }}">
+        </div>
+        <div class="field">
+          <label for="budget">תקציב (₪)</label>
+          <input id="budget" name="budget" type="number" min="0" step="100"
+                 value="{{ form.get('budget', 5000) }}">
+        </div>
+        <div class="field">
+          <label for="interaction_count">אינטראקציות</label>
+          <input id="interaction_count" name="interaction_count" type="number" min="0"
+                 value="{{ form.get('interaction_count', 3) }}">
+        </div>
+        <div class="field">
+          <label for="course_interest">קורס</label>
+          <select id="course_interest" name="course_interest">
+            {% for c in courses %}
+            <option value="{{ c }}" {{ 'selected' if form.get('course_interest') == c }}>
+              {{ c }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="lead_source">מקור</label>
+          <select id="lead_source" name="lead_source">
+            {% for s in sources %}
+            <option value="{{ s }}" {{ 'selected' if form.get('lead_source') == s }}>
+              {{ source_he[s] }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="occupation">עיסוק</label>
+          <select id="occupation" name="occupation">
+            {% for o in ['מפתח תוכנה', 'אנליסט', 'סטודנט', 'מנהל שיווק', 'יזם', 'מורה',
+                          'מעצב', 'איש מכירות', 'מהנדס', 'אחר'] %}
+            <option value="{{ o }}" {{ 'selected' if form.get('occupation') == o }}>{{ o }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="education">השכלה</label>
+          <select id="education" name="education">
+            {% for e in ['תיכונית', 'הנדסאי', 'תואר ראשון', 'תואר שני', 'דוקטורט'] %}
+            <option value="{{ e }}" {{ 'selected' if form.get('education') == e }}>{{ e }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="preferred_schedule">מועד מועדף</label>
+          <select id="preferred_schedule" name="preferred_schedule">
+            {% for s in ['בוקר', 'ערב', 'סופ"ש', 'גמיש'] %}
+            <option value="{{ s }}" {{ 'selected' if form.get('preferred_schedule') == s }}>
+              {{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="city">עיר</label>
+          <select id="city" name="city">
+            {% for c in cities %}
+            <option value="{{ c }}" {{ 'selected' if form.get('city') == c }}>{{ c }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="checkbox" style="margin-top:14px">
+        <input id="previous_ai_experience" name="previous_ai_experience" type="checkbox"
+               {{ 'checked' if form.get('previous_ai_experience') }}>
+        <label for="previous_ai_experience" style="margin:0">ניסיון קודם ב-AI</label>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">חשב הסתברות<span class="spinner"></span></button>
+      </div>
+    </div>
+  </form>
+
+  <div class="card">
+    <div class="card-head"><span class="card-title">תוצאה</span></div>
+    <div class="card-body">
+      {% if result and not result.get('error') %}
+      <div class="prob-hero">
+        <span class="big">{{ result.percent }}%</span>
+        <span class="badge {{ 'green' if result.level == 'high'
+                            else 'amber' if result.level == 'medium' else '' }}">
+          {{ result.level_label }}</span>
+      </div>
+      <div class="prob-bar" style="height:8px;margin:14px 0 8px">
+        <span class="prob-fill {{ result.level }}" style="width:{{ result.percent }}%"></span>
+      </div>
+      <dl class="dl" style="margin-top:14px">
+        <dt>מודל</dt><dd>{{ result.model_label }}</dd>
+        <dt>הסתברות גולמית</dt><dd class="num">{{ result.probability }}</dd>
+        <dt>עדיפות טיפול</dt><dd>{{ result.level_label }}</dd>
+      </dl>
+      {% elif result %}
+      <div class="flash error">{{ result.error }}</div>
+      {% else %}
+      <div class="empty" style="padding:30px">
+        <div class="empty-title">טרם בוצע חיזוי</div>
+        <div>מלא את הטופס ולחץ על "חשב הסתברות".</div>
+      </div>
+      {% endif %}
+      <p class="note" style="margin-top:14px">
+        ספי סיווג: גבוה ≥ 70%, בינוני 40-69.99%, נמוך &lt; 40%.
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

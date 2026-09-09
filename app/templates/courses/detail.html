@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}{{ course.name }} · AIAKILOV CRM{% endblock %}
+{% block heading %}{{ course.name }}{% endblock %}
+{% block subheading %}{{ course.lecturer }} · {{ course.hours }} שעות · אונליין{% endblock %}
+
+{% block content %}
+<div class="grid grid-4" style="margin-bottom:14px">
+  <div class="card kpi"><div class="kpi-label">מחיר</div>
+    <div class="kpi-value">{{ course.price|ils }}</div></div>
+  <div class="card kpi"><div class="kpi-label">נרשמו</div>
+    <div class="kpi-value">{{ stats.enrolled }}</div>
+    <div class="kpi-hint">מתוך {{ course.capacity }} מקומות</div></div>
+  <div class="card kpi"><div class="kpi-label">הכנסות</div>
+    <div class="kpi-value">{{ stats.revenue|ils }}</div></div>
+  <div class="card kpi"><div class="kpi-label">תאריכים</div>
+    <div class="kpi-value" style="font-size:15px">{{ course.start_date }}</div>
+    <div class="kpi-hint">עד {{ course.end_date }}</div></div>
+</div>
+
+<div class="card">
+  <div class="card-head"><span class="card-title">תלמידים רשומים</span>
+    <span class="card-hint">עד 50 אחרונים</span></div>
+  {% if enrollments %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>תלמיד</th><th>אימייל</th><th>תאריך הרשמה</th>
+                 <th>מחיר</th><th>תשלום</th></tr></thead>
+      <tbody>
+        {% for e in enrollments %}
+        <tr>
+          <td style="font-weight:600">{{ e.first_name }} {{ e.last_name }}</td>
+          <td style="color:var(--text-muted)">{{ e.email }}</td>
+          <td class="num">{{ e.enrollment_date }}</td>
+          <td class="num">{{ e.price|ils }}</td>
+          <td><span class="badge {{ 'green' if e.payment_status == 'paid'
+                                  else 'red' if e.payment_status == 'failed' else 'amber' }}">
+            {{ payment_he.get(e.payment_status, e.payment_status) }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty"><div class="empty-title">אין עדיין נרשמים</div>
+    <div>הרשמות יופיעו כאן לאחר המרת לידים לתלמידים.</div></div>
+  {% endif %}
+</div>
+{% endblock %}
