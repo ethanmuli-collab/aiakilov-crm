@@ -1,0 +1,407 @@
+{
+  "generated_at": "2026-09-09T08:08:35.722193+00:00",
+  "dataset": {
+    "rows": 10000,
+    "train_rows": 8000,
+    "test_rows": 2000,
+    "test_size": 0.2,
+    "random_state": 42,
+    "split": "stratified",
+    "positive_rate": 0.2724,
+    "missing_values": {
+      "age": 300,
+      "budget": 449,
+      "occupation": 400,
+      "education": 350
+    }
+  },
+  "features": {
+    "numeric": [
+      "age",
+      "budget",
+      "interaction_count",
+      "previous_ai_experience"
+    ],
+    "categorical": [
+      "city",
+      "occupation",
+      "education",
+      "course_interest",
+      "lead_source",
+      "preferred_schedule"
+    ],
+    "excluded_leaky": [
+      "status",
+      "payment_status",
+      "enrollment",
+      "invoice",
+      "purchased"
+    ]
+  },
+  "best_model": "catboost",
+  "selection_criterion": "ROC-AUC (tie-break F1)",
+  "models": {
+    "logistic_regression": {
+      "key": "logistic_regression",
+      "label": "Logistic Regression",
+      "status": "trained",
+      "metrics": {
+        "accuracy": 0.727,
+        "precision": 0.4966,
+        "recall": 0.1339,
+        "f1": 0.211,
+        "roc_auc": 0.6794,
+        "log_loss": 0.5465,
+        "brier": 0.1834,
+        "confusion_matrix": [
+          [
+            1381,
+            74
+          ],
+          [
+            472,
+            73
+          ]
+        ],
+        "mae": 0.3602,
+        "rmse": 0.4283,
+        "r2": 0.0747
+      },
+      "feature_importance": [
+        {
+          "feature": "lead_source_Referral",
+          "value": 0.8386,
+          "kind": "coefficient"
+        },
+        {
+          "feature": "lead_source_Instagram",
+          "value": -0.6688,
+          "kind": "coefficient"
+        },
+        {
+          "feature": "education_תיכונית",
+          "value": -0.652,
+          "kind": "coefficient"
+        },
+        {
+          "feature": "lead_source_Facebook",
+          "value": -0.6166,
+          "kind": "coefficient"
+        },
+        {
+          "feature": "occupation_סטודנט",
+          "value": -0.5899,
+          "kind": "coefficient"
+        },
+        {
+          "feature": "preferred_schedule_בוקר",
+          "value": -0.5244,
+          "kind": "coefficient"
+        },
+        {
+          "feature": "lead_source_Event",
+          "value": 0.4785,
+          "kind": "coefficient"
+        },
+        {
+          "feature": "course_interest_Data Science",
+          "value": -0.4686,
+          "kind": "coefficient"
+        },
+        {
+          "feature": "lead_source_WhatsApp",
+          "value": -0.3615,
+          "kind": "coefficient"
+        },
+        {
+          "feature": "education_הנדסאי",
+          "value": -0.352,
+          "kind": "coefficient"
+        },
+        {
+          "feature": "occupation_מפתח תוכנה",
+          "value": 0.3148,
+          "kind": "coefficient"
+        },
+        {
+          "feature": "occupation_מורה",
+          "value": -0.2933,
+          "kind": "coefficient"
+        }
+      ]
+    },
+    "random_forest": {
+      "key": "random_forest",
+      "label": "Random Forest",
+      "status": "trained",
+      "metrics": {
+        "accuracy": 0.739,
+        "precision": 0.6769,
+        "recall": 0.0807,
+        "f1": 0.1443,
+        "roc_auc": 0.7124,
+        "log_loss": 0.5325,
+        "brier": 0.1773,
+        "confusion_matrix": [
+          [
+            1434,
+            21
+          ],
+          [
+            501,
+            44
+          ]
+        ],
+        "mae": 0.3625,
+        "rmse": 0.421,
+        "r2": 0.1058
+      },
+      "feature_importance": [
+        {
+          "feature": "budget",
+          "value": 0.1601,
+          "kind": "importance"
+        },
+        {
+          "feature": "interaction_count",
+          "value": 0.1157,
+          "kind": "importance"
+        },
+        {
+          "feature": "age",
+          "value": 0.0832,
+          "kind": "importance"
+        },
+        {
+          "feature": "lead_source_Referral",
+          "value": 0.0683,
+          "kind": "importance"
+        },
+        {
+          "feature": "previous_ai_experience",
+          "value": 0.0595,
+          "kind": "importance"
+        },
+        {
+          "feature": "education_תואר שני",
+          "value": 0.0302,
+          "kind": "importance"
+        },
+        {
+          "feature": "course_interest_Prompt Engineering",
+          "value": 0.0293,
+          "kind": "importance"
+        },
+        {
+          "feature": "occupation_מפתח תוכנה",
+          "value": 0.0258,
+          "kind": "importance"
+        },
+        {
+          "feature": "education_תיכונית",
+          "value": 0.0238,
+          "kind": "importance"
+        },
+        {
+          "feature": "occupation_סטודנט",
+          "value": 0.0229,
+          "kind": "importance"
+        },
+        {
+          "feature": "preferred_schedule_בוקר",
+          "value": 0.0211,
+          "kind": "importance"
+        },
+        {
+          "feature": "lead_source_Facebook",
+          "value": 0.0205,
+          "kind": "importance"
+        }
+      ]
+    },
+    "xgboost": {
+      "key": "xgboost",
+      "label": "XGBoost",
+      "status": "trained",
+      "metrics": {
+        "accuracy": 0.7435,
+        "precision": 0.5606,
+        "recall": 0.2716,
+        "f1": 0.3659,
+        "roc_auc": 0.7048,
+        "log_loss": 0.5378,
+        "brier": 0.1783,
+        "confusion_matrix": [
+          [
+            1339,
+            116
+          ],
+          [
+            397,
+            148
+          ]
+        ],
+        "mae": 0.3342,
+        "rmse": 0.4223,
+        "r2": 0.1004
+      },
+      "feature_importance": [
+        {
+          "feature": "lead_source_Referral",
+          "value": 0.0579,
+          "kind": "importance"
+        },
+        {
+          "feature": "course_interest_Prompt Engineering",
+          "value": 0.0343,
+          "kind": "importance"
+        },
+        {
+          "feature": "previous_ai_experience",
+          "value": 0.034,
+          "kind": "importance"
+        },
+        {
+          "feature": "occupation_סטודנט",
+          "value": 0.0332,
+          "kind": "importance"
+        },
+        {
+          "feature": "lead_source_Event",
+          "value": 0.0316,
+          "kind": "importance"
+        },
+        {
+          "feature": "education_תיכונית",
+          "value": 0.0291,
+          "kind": "importance"
+        },
+        {
+          "feature": "lead_source_Facebook",
+          "value": 0.0288,
+          "kind": "importance"
+        },
+        {
+          "feature": "course_interest_Data Science",
+          "value": 0.0264,
+          "kind": "importance"
+        },
+        {
+          "feature": "preferred_schedule_בוקר",
+          "value": 0.0263,
+          "kind": "importance"
+        },
+        {
+          "feature": "occupation_מפתח תוכנה",
+          "value": 0.0258,
+          "kind": "importance"
+        },
+        {
+          "feature": "education_תואר שני",
+          "value": 0.0257,
+          "kind": "importance"
+        },
+        {
+          "feature": "lead_source_Instagram",
+          "value": 0.0243,
+          "kind": "importance"
+        }
+      ]
+    },
+    "lightgbm": {
+      "key": "lightgbm",
+      "label": "LightGBM",
+      "status": "unavailable",
+      "reason": "OSError: [WinError 4551] An Application Control policy has blocked this file"
+    },
+    "catboost": {
+      "key": "catboost",
+      "label": "CatBoost",
+      "status": "trained",
+      "metrics": {
+        "accuracy": 0.754,
+        "precision": 0.6199,
+        "recall": 0.2514,
+        "f1": 0.3577,
+        "roc_auc": 0.7276,
+        "log_loss": 0.52,
+        "brier": 0.1725,
+        "confusion_matrix": [
+          [
+            1371,
+            84
+          ],
+          [
+            408,
+            137
+          ]
+        ],
+        "mae": 0.3338,
+        "rmse": 0.4153,
+        "r2": 0.13
+      },
+      "feature_importance": [
+        {
+          "feature": "budget",
+          "value": 16.863,
+          "kind": "importance"
+        },
+        {
+          "feature": "age",
+          "value": 8.9729,
+          "kind": "importance"
+        },
+        {
+          "feature": "interaction_count",
+          "value": 8.5118,
+          "kind": "importance"
+        },
+        {
+          "feature": "previous_ai_experience",
+          "value": 4.7724,
+          "kind": "importance"
+        },
+        {
+          "feature": "course_interest_Prompt Engineering",
+          "value": 3.1455,
+          "kind": "importance"
+        },
+        {
+          "feature": "occupation_סטודנט",
+          "value": 2.6822,
+          "kind": "importance"
+        },
+        {
+          "feature": "lead_source_Referral",
+          "value": 2.6359,
+          "kind": "importance"
+        },
+        {
+          "feature": "course_interest_Data Science",
+          "value": 2.5442,
+          "kind": "importance"
+        },
+        {
+          "feature": "lead_source_Instagram",
+          "value": 2.4209,
+          "kind": "importance"
+        },
+        {
+          "feature": "lead_source_Facebook",
+          "value": 2.3641,
+          "kind": "importance"
+        },
+        {
+          "feature": "education_תואר שני",
+          "value": 2.2246,
+          "kind": "importance"
+        },
+        {
+          "feature": "education_תיכונית",
+          "value": 2.1907,
+          "kind": "importance"
+        }
+      ]
+    }
+  }
+}
