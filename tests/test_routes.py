@@ -23,6 +23,73 @@ def test_lead_detail_unknown_id(auth_client):
     assert auth_client.get("/leads/00000000-0000-0000-0000-000000000000").status_code == 404
 
 
+# ------------------------------------------------------------- manual create
+
+def test_create_course_form_renders(auth_client):
+    assert auth_client.get("/courses/new").status_code == 200
+
+
+def test_create_course(auth_client):
+    res = auth_client.post("/courses/new", data={
+        "name": "בדיקת קורס", "price": "1990", "lecturer": "בודק אוטומטי",
+        "difficulty": "מתחילים", "status": "active", "capacity": "20", "hours": "10",
+    })
+    assert res.status_code == 302
+    course_id = res.headers["Location"].rsplit("/", 1)[-1]
+    detail = auth_client.get(f"/courses/{course_id}")
+    assert detail.status_code == 200
+    assert "בדיקת קורס" in detail.get_data(as_text=True)
+
+
+def test_create_course_validation_rejects_missing_name(auth_client):
+    res = auth_client.post("/courses/new", data={"price": "100"})
+    assert res.status_code == 400
+
+
+def test_create_course_validation_rejects_negative_price(auth_client):
+    res = auth_client.post("/courses/new", data={"name": "X", "price": "-5"})
+    assert res.status_code == 400
+
+
+def test_create_course_requires_permission(app):
+    c = app.test_client()
+    c.post("/login", data={"email": "lecturer@aiakilov.co.il"})
+    assert c.get("/courses/new").status_code == 302
+
+
+def test_create_student_form_renders(auth_client):
+    assert auth_client.get("/students/new").status_code == 200
+
+
+def test_create_student(auth_client):
+    res = auth_client.post("/students/new", data={
+        "first_name": "תלמיד", "last_name": "ידני", "email": "manual@example.com",
+        "city": "חיפה",
+    })
+    assert res.status_code == 302
+    student_id = res.headers["Location"].rsplit("/", 1)[-1]
+    detail = auth_client.get(f"/students/{student_id}")
+    assert detail.status_code == 200
+    assert "תלמיד" in detail.get_data(as_text=True)
+
+
+def test_create_student_validation_rejects_empty_name(auth_client):
+    res = auth_client.post("/students/new", data={"first_name": "", "last_name": ""})
+    assert res.status_code == 400
+
+
+def test_create_student_validation_rejects_bad_email(auth_client):
+    res = auth_client.post("/students/new",
+                           data={"first_name": "א", "last_name": "ב", "email": "bad"})
+    assert res.status_code == 400
+
+
+def test_create_student_requires_permission(app):
+    c = app.test_client()
+    c.post("/login", data={"email": "lecturer@aiakilov.co.il"})
+    assert c.get("/students/new").status_code == 302
+
+
 def test_create_lead(auth_client):
     res = auth_client.post("/leads/new", data={
         "first_name": "טסט", "last_name": "אוטומציה", "email": "auto@example.com",
@@ -96,7 +163,7 @@ def test_api_create_lead_validation(auth_client):
 def test_api_courses(auth_client):
     res = auth_client.get("/api/courses")
     assert res.status_code == 200
-    assert len(res.get_json()["data"]) == 6
+    assert len(res.get_json()["data"]) >= 6  # the seeded 6, plus any created in tests
 
 
 def test_api_requires_auth(client):

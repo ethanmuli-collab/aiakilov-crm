@@ -1,8 +1,11 @@
-"""Students - business records converted from won leads."""
+"""Students - business records, either converted from won leads or added directly."""
 
 from __future__ import annotations
 
-from flask import Blueprint, render_template, request
+import uuid
+from datetime import datetime, timezone
+
+from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from ..services import db
 from ..services.auth_service import permission_required
@@ -38,6 +41,32 @@ def index():
     )
 
 
+@bp.route("/new", methods=["GET", "POST"])
+@permission_required("students.edit")
+def create():
+    if request.method == "POST":
+        errors = _validate(request.form)
+        if errors:
+            for e in errors:
+                flash(e, "error")
+            return render_template("students/form.html", student=request.form,
+                                   errors=errors), 400
+        student_id = str(uuid.uuid4())
+        db.execute(
+            "INSERT INTO aiakilov_students (id, lead_id, first_name, last_name, email,"
+            " phone, city, created_at) VALUES (?,?,?,?,?,?,?,?)",
+            (student_id, None, request.form.get("first_name", "").strip(),
+             request.form.get("last_name", "").strip(),
+             request.form.get("email", "").strip() or None,
+             request.form.get("phone", "").strip() or None,
+             request.form.get("city", "").strip() or None,
+             datetime.now(timezone.utc).isoformat(timespec="seconds")),
+        )
+        flash("התלמיד נוצר בהצלחה", "success")
+        return redirect(url_for("students.detail", student_id=student_id))
+    return render_template("students/form.html", student={}, errors=[])
+
+
 @bp.route("/<student_id>")
 @permission_required("students.view")
 def detail(student_id: str):
@@ -60,3 +89,15 @@ def detail(student_id: str):
         "students/detail.html", student=student, enrollments=enrollments,
         invoices=invoices, payment_he=db.PAYMENT_HE,
     )
+
+
+# --------------------------------------------------------------------------- helpers
+
+def _validate(form) -> list[str]:
+    errors = []
+    if not (form.get("first_name") or "").strip() or not (form.get("last_name") or "").strip():
+        errors.append("שם פרטי ושם משפחה הם שדות חובה")
+    email = (form.get("email") or "").strip()
+    if email and "@" not in email:
+        errors.append("כתובת אימייל אינה תקינה")
+    return errors

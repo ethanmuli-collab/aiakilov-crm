@@ -2,6 +2,11 @@
 {% block title %}קורסים · AIAKILOV CRM{% endblock %}
 {% block heading %}קורסים{% endblock %}
 {% block subheading %}כל הקורסים מועברים אונליין{% endblock %}
+{% block actions %}
+  {% if can('courses.edit') %}
+  <a class="btn btn-primary" href="{{ url_for('courses.create') }}">+ קורס חדש</a>
+  {% endif %}
+{% endblock %}
 
 {% block content %}
 <div class="grid grid-3">

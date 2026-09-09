@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}תלמיד חדש · AIAKILOV CRM{% endblock %}
+{% block heading %}תלמיד חדש{% endblock %}
+{% block subheading %}הוספת תלמיד ידנית, שלא דרך המרת ליד{% endblock %}
+
+{% block content %}
+{% if errors %}
+<div class="flash error" style="margin-bottom:14px">
+  <ul style="margin:0;padding-inline-start:18px">
+    {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<form class="card" method="post" action="{{ url_for('students.create') }}">
+  <div class="card-body">
+    <div class="form-grid">
+      <div class="field">
+        <label for="first_name">שם פרטי *</label>
+        <input id="first_name" name="first_name" required value="{{ student.get('first_name', '') }}">
+      </div>
+      <div class="field">
+        <label for="last_name">שם משפחה *</label>
+        <input id="last_name" name="last_name" required value="{{ student.get('last_name', '') }}">
+      </div>
+      <div class="field">
+        <label for="email">אימייל</label>
+        <input id="email" name="email" type="email" value="{{ student.get('email', '') }}">
+      </div>
+      <div class="field">
+        <label for="phone">טלפון</label>
+        <input id="phone" name="phone" value="{{ student.get('phone', '') }}">
+      </div>
+      <div class="field">
+        <label for="city">עיר</label>
+        <input id="city" name="city" value="{{ student.get('city', '') }}">
+      </div>
+    </div>
+
+    <p class="note" style="margin-top:14px">
+      תלמיד שנוצר כאן מתחיל ללא הרשמות לקורסים. ניתן להוסיף הרשמה דרך המרת ליד קיים,
+      או ליצור עבורו הרשמה בעתיד.
+    </p>
+
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">יצירת תלמיד<span class="spinner"></span></button>
+      <a class="btn" href="{{ url_for('students.index') }}">ביטול</a>
+    </div>
+  </div>
+</form>
+{% endblock %}

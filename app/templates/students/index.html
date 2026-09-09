@@ -2,6 +2,11 @@
 {% block title %}תלמידים · AIAKILOV CRM{% endblock %}
 {% block heading %}תלמידים{% endblock %}
 {% block subheading %}{{ '{:,}'.format(total) }} תלמידים רשומים{% endblock %}
+{% block actions %}
+  {% if can('students.edit') %}
+  <a class="btn btn-primary" href="{{ url_for('students.create') }}">+ תלמיד חדש</a>
+  {% endif %}
+{% endblock %}
 
 {% block content %}
 <form class="card filters" method="get">

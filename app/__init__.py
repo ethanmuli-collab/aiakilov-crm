@@ -69,4 +69,8 @@ def create_app(config: dict | None = None) -> Flask:
     app.jinja_env.filters["ils"] = lambda v: f"₪{float(v or 0):,.0f}"
     app.jinja_env.filters["pct"] = lambda v: f"{float(v or 0) * 100:.1f}%"
 
+    from .services.auth_service import register_template_helpers
+
+    register_template_helpers(app)
+
     return app
