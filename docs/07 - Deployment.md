@@ -1,8 +1,13 @@
 # Deployment — Railway
 
+**Live:** https://zooming-imagination-production-8369.up.railway.app
+(Railway project `humorous-creation`, service `zooming-imagination`,
+deployed from `main` via GitHub, US West region.)
+
 ## Target
 
-Railway, via `Procfile` + `requirements.txt` (Nixpacks auto-detects Python).
+Railway, via `Procfile` + `requirements.txt` (Nixpacks/Railpack auto-detects
+Python).
 
 ## What's deployment-ready in the repo
 
@@ -40,10 +45,18 @@ Railway, via `Procfile` + `requirements.txt` (Nixpacks auto-detects Python).
    `ethanmuli-collab/aiakilov-crm`, branch `main`.
 2. Set `FLASK_SECRET_KEY` (generate one) and `AIAKILOV_DEMO_MODE=true` in the
    service's Variables tab.
-3. Railway auto-detects the `Procfile`; first deploy takes a few minutes
-   (catboost/lightgbm wheels are large).
-4. Once live, Railway assigns a public `*.up.railway.app` URL — that's what
-   gets shared with the instructor. A custom domain isn't necessary for this.
+3. Railway auto-detects the `Procfile`; first build took ~2 minutes (all
+   packages, catboost/lightgbm included, installed from prebuilt wheels - no
+   compilation needed).
+4. **Public URL is not automatic** - Settings → Networking → Public
+   Networking → Generate Domain, port `8080` (Railway's `$PORT` for this
+   deploy). Only then does the `*.up.railway.app` domain exist. A custom
+   domain isn't necessary for this.
+
+Actual result: https://zooming-imagination-production-8369.up.railway.app —
+verified end-to-end (login, dashboard, all 5 ML models including LightGBM,
+which loads fine on Railway's Linux container - the Windows Application
+Control block never applied there).
 
 ## Known limitation of this deploy shape
 
