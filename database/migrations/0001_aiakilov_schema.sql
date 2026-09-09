@@ -188,11 +188,16 @@ alter table aiakilov_invoices        enable row level security;
 alter table aiakilov_ml_predictions  enable row level security;
 
 -- Helper: the calling user's CRM role.
+-- SECURITY INVOKER, not DEFINER: aiakilov_read_authenticated already lets any
+-- authenticated user select all of aiakilov_profiles, so this function never
+-- needs elevated privileges. DEFINER would make it directly callable via
+-- /rest/v1/rpc/aiakilov_current_role with no added benefit - a real (if low
+-- severity) finding the Supabase security linter flags.
 create or replace function aiakilov_current_role()
 returns text
 language sql
 stable
-security definer
+security invoker
 set search_path = public
 as $$
     select role from aiakilov_profiles where user_id = auth.uid()

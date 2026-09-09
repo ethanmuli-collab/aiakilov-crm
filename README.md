@@ -260,6 +260,18 @@ python -m ruff check .
 
 ## Supabase setup
 
+The project has its **own dedicated Supabase project** — `aiakilov-crm`
+(`hgkgzrkhlnuqtfoyfeug`, `eu-central-1`), not a shared one. Its schema is
+already applied and seeded (6 courses, 6 profiles, 240 sample leads), with RLS
+enabled on all ten tables.
+
+* Project URL: `https://hgkgzrkhlnuqtfoyfeug.supabase.co`
+* The `anon`/publishable key is safe to commit (`.env.example` already has it)
+  — RLS is what actually protects the data, not key secrecy. The
+  `service_role` key is never printed, logged or committed anywhere.
+
+To reproduce this setup (or point at a different project) from scratch:
+
 1. Run `database/schema.sql` in the SQL editor — it is **additive only**: no
    `DROP`, no `CASCADE`, no `TRUNCATE`, and every object is `aiakilov_`-prefixed.
 2. Run `database/seed.sql` for courses, profiles and a 500-lead sample.
@@ -271,6 +283,11 @@ python -m ruff check .
 RLS is enabled on all ten tables: authenticated staff can read; writes to
 leads are limited to ADMIN/SALES, and courses & enrolments to
 ADMIN/COURSE_MANAGER, via the `aiakilov_current_role()` helper.
+
+**Note:** the running app still defaults to `AIAKILOV_DEMO_MODE=true` (local
+SQLite), by deliberate choice — see Known Limitations. The dedicated Supabase
+project above is fully provisioned and ready whenever real Supabase Auth /
+Postgres is wired in.
 
 ---
 
