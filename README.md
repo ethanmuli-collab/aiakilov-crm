@@ -185,8 +185,8 @@ not apply to this task.
 | **CatBoost** ⭐ | 0.660 | 0.418 | 0.633 | 0.504 | **0.717** | 0.576 | 0.45 |
 | Random Forest | 0.639 | 0.404 | 0.684 | 0.508 | 0.712 | 0.596 | 0.45 |
 | XGBoost | 0.652 | 0.411 | 0.637 | 0.500 | 0.704 | 0.583 | 0.43 |
+| LightGBM | 0.667 | 0.421 | 0.591 | 0.492 | 0.699 | 0.584 | 0.44 |
 | Logistic Regression | 0.608 | 0.379 | 0.684 | 0.488 | 0.681 | 0.636 | 0.46 |
-| LightGBM | see note below | | | | | | |
 
 ⭐ selected model, by ROC-AUC (tie-break F1) — never by accuracy, which is a
 misleading metric here (predicting "nobody buys" alone scores ~73% accuracy
@@ -214,6 +214,16 @@ cd aiakilov-crm
 python -m venv .venv && .venv\Scripts\activate     # Windows
 pip install -r requirements.txt
 ```
+
+> **Windows note:** on a machine with an Application Control / WDAC policy,
+> `pip install lightgbm` can fail to *load* (installs fine, then
+> `import lightgbm` raises `OSError: ... Application Control policy has
+> blocked this file`) because its native DLL isn't trusted. If that happens,
+> install it via conda-forge instead — a differently-built/signed binary that
+> passes the same policy: `conda install -c conda-forge lightgbm -y`. Every
+> other package installs fine with plain `pip`. This never blocks the rest of
+> the app — `ml/train_models.py` skips any model whose library fails to load
+> and reports it as unavailable rather than crashing.
 
 ### Environment variables
 
@@ -302,8 +312,11 @@ Defined as a flat `permission → {roles}` map in
 * **Demo mode by default.** Login has no password; it is clearly labelled in
   the UI. Supabase Auth code is written and documented but the demo runs on
   SQLite so it never depends on external configuration.
-* **LightGBM unavailable** on the build machine (OS Application Control blocked
-  its native DLL). The app reports it as unavailable rather than failing.
+* **LightGBM via pip can fail to load** on a Windows machine with an
+  Application Control policy (its native DLL gets blocked). Installing it via
+  `conda-forge` instead works around this — see the Installation section.
+  Either way, the app reports it as unavailable rather than failing if it
+  can't load.
 * **Invoices are demo documents**, not valid Israeli tax invoices. No PDF
   export — printable HTML only.
 * **No real payment provider.** Payment status is edited manually.
