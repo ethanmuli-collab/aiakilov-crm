@@ -1,46 +1,55 @@
-# Deployment (not performed)
-
-Per project instructions, no deployment was carried out in this session. This
-file documents what a future deploy would need.
+# Deployment — Railway
 
 ## Target
 
-Any WSGI-capable host (Render, Railway, Fly.io). No infra was provisioned.
+Railway, via `Procfile` + `requirements.txt` (Nixpacks auto-detects Python).
 
-## Requirements for a future deploy
+## What's deployment-ready in the repo
 
 1. **Web service**
-   - Build: `pip install -r requirements.txt`
-   - Start: `gunicorn "app:create_app()"` (add `gunicorn` to `requirements.txt`)
-   - Port: read from `$PORT` if the host requires it
+   - `Procfile`: `web: gunicorn run:app --bind 0.0.0.0:$PORT --workers 1 --timeout 60`
+   - `run.py` exposes `app = create_app()` at module level — that's the
+     `run:app` gunicorn target
+   - **1 worker, deliberately.** `db.init_db()` seeds SQLite on first boot by
+     checking `if seeded == 0`; two workers cold-starting together could both
+     pass that check before either finishes inserting the 10,000-row seed,
+     causing duplicate rows or a `database is locked` error. A single worker
+     is correctness-safe and plenty for a low-traffic demo link.
+   - `.python-version` pins `3.12` — a well-supported version with prebuilt
+     Linux wheels for xgboost/lightgbm/catboost (avoids build-from-source on
+     a brand-new Python release)
 
-2. **Environment variables** (set in the host's dashboard, never committed)
+2. **Environment variables** (set in Railway's dashboard, never committed)
    - `FLASK_SECRET_KEY` — a real random secret, not the dev default
-   - `AIAKILOV_DEMO_MODE=false` to require real Supabase Auth
-   - `SUPABASE_URL`, `SUPABASE_ANON_KEY`
-   - `SUPABASE_SERVICE_ROLE_KEY` — only if server-side admin operations are added later
+   - `AIAKILOV_DEMO_MODE=true` — demo login (pick a user, no password) is the
+     right choice for sharing a link with an instructor; flip to `false` only
+     once Supabase Auth is actually wired up (see `03 - Database.md`)
 
-3. **Database**
-   - Apply `database/schema.sql` (already applied to the live Supabase project
-     used during development — see the Supabase status in the final session
-     report)
-   - Run `database/seed.sql` for courses/profiles, or leave empty for a clean
-     production start
+3. **Database** — nothing to do at deploy time. `data/aiakilov.db` is
+   ephemeral and regenerated from `data/synthetic_leads.csv` on first boot
+   (both committed) — every fresh deploy or restart gives a clean, fully
+   seeded demo state, which is actually desirable here.
 
-4. **ML artifacts**
-   - `ml/artifacts/*.joblib` and `metrics.json` must ship inside the deployed
-     image/build — they are committed to the repo, so a standard build step
-     is enough; no separate training job is required at deploy time
-   - Optionally re-run `python ml/train_models.py` in a CI step before deploy
-     to refresh metrics
+4. **ML artifacts** — `ml/artifacts/*.joblib` and `metrics.json` are committed
+   to the repo, so a standard build ships them; no training step needed at
+   deploy time.
 
-5. **Public URL**
-   - Once deployed, share the URL with the instructor; no additional DNS/TLS
-     work is expected from a platform like Render/Railway (they provide it)
+## Deploy steps
 
-## Explicitly not done in this session
+1. Railway dashboard → New Project → **Deploy from GitHub repo** →
+   `ethanmuli-collab/aiakilov-crm`, branch `main`.
+2. Set `FLASK_SECRET_KEY` (generate one) and `AIAKILOV_DEMO_MODE=true` in the
+   service's Variables tab.
+3. Railway auto-detects the `Procfile`; first deploy takes a few minutes
+   (catboost/lightgbm wheels are large).
+4. Once live, Railway assigns a public `*.up.railway.app` URL — that's what
+   gets shared with the instructor. A custom domain isn't necessary for this.
 
-- No Render/Railway/Fly project was created
-- No production Supabase project was created (the existing `systema` Supabase
-  project was reused, isolated via `aiakilov_*` prefixing)
-- No custom domain, TLS or CDN configuration
+## Known limitation of this deploy shape
+
+Filesystem storage on Railway isn't guaranteed persistent across redeploys —
+by design here, since a clean reseed on every restart is a feature, not a bug,
+for a demo link. If this ever needs to hold real, persisted state, the SQLite
+file would need a Railway volume, or the app would need to actually switch to
+the dedicated Supabase project instead (already provisioned and ready — see
+`03 - Database.md`).
