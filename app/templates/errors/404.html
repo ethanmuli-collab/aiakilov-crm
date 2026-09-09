@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}404 · AIAKILOV CRM{% endblock %}
+{% block heading %}העמוד לא נמצא{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="empty" style="padding:70px 20px">
+    <div style="font-size:52px;font-weight:700;color:var(--text-faint);
+                letter-spacing:-.03em">404</div>
+    <div class="empty-title" style="margin-top:10px">העמוד לא נמצא</div>
+    <div>ייתכן שהקישור שגוי או שהרשומה נמחקה.</div>
+    <a class="btn btn-primary" style="margin-top:18px"
+       href="{{ url_for('dashboard.index') }}">חזרה לדשבורד</a>
+  </div>
+</div>
+{% endblock %}

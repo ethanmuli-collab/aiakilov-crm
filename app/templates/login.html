@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>כניסה · AIAKILOV CRM</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+<div class="login-wrap">
+  <div class="card login-card">
+    <div class="login-head">
+      <div class="brand-mark">AI</div>
+      <h1>AIAKILOV CRM</h1>
+      <p class="page-sub">מערכת ניהול לידים ותלמידים לאקדמיית ה-AI</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div class="flash-stack">
+        {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="post">
+      <div class="field">
+        <label for="email">משתמש מערכת</label>
+        <select id="email" name="email" required>
+          {% for u in users %}
+          <option value="{{ u.email }}">
+            {{ u.full_name }} — {{ role_he.get(u.role, u.role) }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% if not demo_mode %}
+      <div class="field" style="margin-top:12px">
+        <label for="password">סיסמה</label>
+        <input id="password" name="password" type="password" required autocomplete="current-password">
+      </div>
+      {% endif %}
+      <button class="btn btn-primary" type="submit" style="width:100%;margin-top:16px">
+        כניסה למערכת<span class="spinner"></span></button>
+    </form>
+
+    {% if demo_mode %}
+    <p class="note warn" style="margin-top:16px">
+      <strong>מצב הדגמה.</strong> ההתחברות היא ללא סיסמה ומיועדת להצגה אקדמית בלבד.
+      חיבור ל-Supabase Auth מוגדר בקוד ומופעל על ידי הגדרת משתני הסביבה וכיבוי
+      <code>AIAKILOV_DEMO_MODE</code>.
+    </p>
+    {% endif %}
+  </div>
+</div>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

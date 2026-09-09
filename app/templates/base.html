@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}AIAKILOV CRM{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%235b5bd6'/><text x='16' y='22' font-size='16' font-family='sans-serif' font-weight='bold' fill='white' text-anchor='middle'>A</text></svg>">
+  {% block head %}{% endblock %}
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">AI</div>
+      <div>
+        <div class="brand-name">AIAKILOV</div>
+        <div class="brand-sub">מערכת CRM</div>
+      </div>
+    </div>
+
+    <div class="nav-label">ניהול</div>
+    <a class="nav-item {{ 'active' if request.endpoint == 'dashboard.index' }}" href="{{ url_for('dashboard.index') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+      דשבורד
+    </a>
+    <a class="nav-item {{ 'active' if request.blueprint == 'leads' }}" href="{{ url_for('leads.index') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+      לידים
+    </a>
+    <a class="nav-item {{ 'active' if request.blueprint == 'courses' }}" href="{{ url_for('courses.index') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      קורסים
+    </a>
+    <a class="nav-item {{ 'active' if request.blueprint == 'students' }}" href="{{ url_for('students.index') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
+      תלמידים
+    </a>
+    <a class="nav-item {{ 'active' if request.blueprint == 'enrollments' }}" href="{{ url_for('enrollments.index') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15h6"/></svg>
+      הרשמות
+    </a>
+
+    <div class="nav-label">אנליטיקה</div>
+    <a class="nav-item {{ 'active' if request.endpoint == 'predictions.models' }}" href="{{ url_for('predictions.models') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.8L7 14.3"/></svg>
+      מודלים
+    </a>
+    <a class="nav-item {{ 'active' if request.endpoint == 'predictions.predict' }}" href="{{ url_for('predictions.predict') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.9 4.9l2.9 2.9M16.2 16.2l2.9 2.9M2 12h4M18 12h4M4.9 19.1l2.9-2.9M16.2 7.8l2.9-2.9"/></svg>
+      חיזוי
+    </a>
+    <a class="nav-item {{ 'active' if request.blueprint == 'reports' }}" href="{{ url_for('reports.index') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+      דוחות
+    </a>
+    <a class="nav-item {{ 'active' if request.endpoint == 'dashboard.settings' }}" href="{{ url_for('dashboard.settings') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      הגדרות
+    </a>
+
+    {% if current_user %}
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="avatar">{{ current_user.full_name[0] }}</div>
+        <div style="min-width:0">
+          <div class="user-name">{{ current_user.full_name }}</div>
+          <div class="user-role">{{ {'ADMIN':'מנהל מערכת','SALES':'מכירות','COURSE_MANAGER':'מנהל קורסים','LECTURER':'מרצה','MARKETING':'שיווק','MANAGEMENT':'הנהלה'}.get(current_user.role, current_user.role) }}</div>
+        </div>
+      </div>
+      <a class="btn btn-sm btn-ghost" style="width:100%" href="{{ url_for('auth.logout') }}">התנתקות</a>
+    </div>
+    {% endif %}
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="page-title">
+        <h1>{% block heading %}{% endblock %}</h1>
+        <span class="page-sub">{% block subheading %}{% endblock %}</span>
+      </div>
+      <div class="topbar-actions">
+        {% if demo_mode %}<span class="demo-badge">מצב הדגמה</span>{% endif %}
+        {% block actions %}{% endblock %}
+      </div>
+    </header>
+
+    <main class="content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-stack">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}" role="status">{{ message }}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

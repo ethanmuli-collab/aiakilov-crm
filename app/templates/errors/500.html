@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}500 · AIAKILOV CRM{% endblock %}
+{% block heading %}שגיאת שרת{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="empty" style="padding:70px 20px">
+    <div style="font-size:52px;font-weight:700;color:var(--text-faint);
+                letter-spacing:-.03em">500</div>
+    <div class="empty-title" style="margin-top:10px">שגיאת שרת</div>
+    <div>אירעה תקלה בלתי צפויה. נסה שוב או חזור לדשבורד.</div>
+    <a class="btn btn-primary" style="margin-top:18px"
+       href="{{ url_for('dashboard.index') }}">חזרה לדשבורד</a>
+  </div>
+</div>
+{% endblock %}
