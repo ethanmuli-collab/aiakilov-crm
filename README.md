@@ -346,13 +346,15 @@ Defined as a flat `permission → {roles}` map in
 
 ---
 
-## Future deployment
+## Deployment
 
-Not deployed. See `docs/07 - Deployment.md`. The app is deployment-ready:
-environment-driven config, no hard-coded secrets, a WSGI entry point in
-`run.py`, and committed ML artifacts. A future deploy needs a Render/Railway
-web service running `gunicorn "app:create_app()"`, the Supabase environment
-variables, and `ml/artifacts/` present in the image.
+**Live on Railway:** https://zooming-imagination-production-8369.up.railway.app
+
+Deployed from `main` via GitHub → Railway (Procfile + Railpack, Python 3.12,
+gunicorn, 1 worker — see `docs/07 - Deployment.md` for exactly why 1 worker
+and the full deploy steps). `AIAKILOV_DEMO_MODE=true`, so it's the same demo
+login as local (pick a user, no password) — that's deliberate for sharing
+with an instructor.
 
 ---
 
