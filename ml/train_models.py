@@ -11,6 +11,27 @@ Split contract
 80/20 stratified split with a fixed random_state. Every preprocessor is fitted
 inside a Pipeline on the TRAINING FOLD ONLY, so the test fold never influences
 imputation statistics, scaling or category vocabularies.
+
+Metrics contract
+----------------
+This is binary CLASSIFICATION, not regression: only classification metrics are
+reported (accuracy, precision, recall, F1, ROC-AUC, log loss, Brier score,
+confusion matrix). MAE/RMSE/R² do not apply here and are deliberately absent.
+
+Class imbalance & decision threshold
+-------------------------------------
+The positive rate is ~27%, so a fixed 0.5 cutoff under-predicts the minority
+class (this is what tanked F1 in the first pass - Random Forest was scoring
+F1=0.14 while ROC-AUC was a respectable 0.71). Two fixes, both standard and
+leakage-safe:
+  1. Every estimator is class-weighted (or given `scale_pos_weight`) so the
+     loss itself accounts for the imbalance.
+  2. The 0.5 decision threshold is replaced by one tuned to maximise F1 on an
+     internal validation split carved out of the TRAINING fold only (never
+     the test fold) - then the final model is refit on the full training set
+     and evaluated on the test fold using that tuned threshold. ROC-AUC, log
+     loss and Brier score are threshold-independent and computed on the raw
+     probabilities regardless.
 """
 
 from __future__ import annotations
@@ -32,9 +53,7 @@ from sklearn.metrics import (
     confusion_matrix,
     f1_score,
     log_loss,
-    mean_absolute_error,
     precision_score,
-    r2_score,
     recall_score,
     roc_auc_score,
 )
@@ -46,6 +65,8 @@ warnings.filterwarnings("ignore")
 
 SEED = 42
 TEST_SIZE = 0.20
+VAL_SIZE = 0.20  # carved out of the training fold only, for threshold tuning
+THRESHOLD_GRID = np.round(np.arange(0.02, 0.99, 0.01), 2)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_CSV = os.path.join(BASE_DIR, "data", "synthetic_leads.csv")
@@ -100,20 +121,28 @@ def build_preprocessor(scale_numeric: bool) -> ColumnTransformer:
     )
 
 
-def candidate_models() -> list[tuple[str, object, bool, str | None]]:
-    """(key, estimator, needs_scaling, unavailable_reason)."""
+def candidate_models(y_train: pd.Series) -> list[tuple[str, object, bool, str | None]]:
+    """(key, estimator, needs_scaling, unavailable_reason).
+
+    Every estimator is class-weighted for the ~27% positive rate so the loss
+    function itself compensates for the imbalance, on top of the tuned
+    decision threshold applied later.
+    """
+    neg, pos = int((y_train == 0).sum()), int((y_train == 1).sum())
+    scale_pos_weight = neg / pos if pos else 1.0
+
     models: list[tuple[str, object, bool, str | None]] = [
         (
             "logistic_regression",
-            LogisticRegression(max_iter=2000, random_state=SEED),
+            LogisticRegression(max_iter=2000, class_weight="balanced", random_state=SEED),
             True,
             None,
         ),
         (
             "random_forest",
             RandomForestClassifier(
-                n_estimators=300, max_depth=12, min_samples_leaf=5,
-                random_state=SEED, n_jobs=-1,
+                n_estimators=400, max_depth=14, min_samples_leaf=3,
+                class_weight="balanced", random_state=SEED, n_jobs=-1,
             ),
             False,
             None,
@@ -127,9 +156,9 @@ def candidate_models() -> list[tuple[str, object, bool, str | None]]:
             (
                 "xgboost",
                 XGBClassifier(
-                    n_estimators=350, max_depth=5, learning_rate=0.07,
+                    n_estimators=400, max_depth=5, learning_rate=0.06,
                     subsample=0.9, colsample_bytree=0.9, eval_metric="logloss",
-                    random_state=SEED, n_jobs=-1,
+                    scale_pos_weight=scale_pos_weight, random_state=SEED, n_jobs=-1,
                 ),
                 False,
                 None,
@@ -145,8 +174,8 @@ def candidate_models() -> list[tuple[str, object, bool, str | None]]:
             (
                 "lightgbm",
                 LGBMClassifier(
-                    n_estimators=350, learning_rate=0.07, num_leaves=31,
-                    random_state=SEED, n_jobs=-1, verbose=-1,
+                    n_estimators=400, learning_rate=0.06, num_leaves=31,
+                    class_weight="balanced", random_state=SEED, n_jobs=-1, verbose=-1,
                 ),
                 False,
                 None,
@@ -162,8 +191,8 @@ def candidate_models() -> list[tuple[str, object, bool, str | None]]:
             (
                 "catboost",
                 CatBoostClassifier(
-                    iterations=350, depth=6, learning_rate=0.07,
-                    random_seed=SEED, verbose=0,
+                    iterations=400, depth=6, learning_rate=0.06,
+                    auto_class_weights="Balanced", random_seed=SEED, verbose=0,
                 ),
                 False,
                 None,
@@ -201,10 +230,15 @@ def feature_importance(pipe: Pipeline, key: str) -> list[dict]:
         return []
 
 
-def evaluate(y_true: np.ndarray, y_pred: np.ndarray, y_prob: np.ndarray) -> dict:
+def best_f1_threshold(y_true: np.ndarray, y_prob: np.ndarray) -> float:
+    """Grid-search the classification threshold that maximises F1."""
+    scores = [f1_score(y_true, (y_prob >= t).astype(int), zero_division=0) for t in THRESHOLD_GRID]
+    return float(THRESHOLD_GRID[int(np.argmax(scores))])
+
+
+def evaluate(y_true: np.ndarray, y_pred: np.ndarray, y_prob: np.ndarray, threshold: float) -> dict:
     cm = confusion_matrix(y_true, y_pred).tolist()
     return {
-        # --- primary classification metrics ---
         "accuracy": round(float(accuracy_score(y_true, y_pred)), 4),
         "precision": round(float(precision_score(y_true, y_pred, zero_division=0)), 4),
         "recall": round(float(recall_score(y_true, y_pred, zero_division=0)), 4),
@@ -213,10 +247,7 @@ def evaluate(y_true: np.ndarray, y_pred: np.ndarray, y_prob: np.ndarray) -> dict
         "log_loss": round(float(log_loss(y_true, y_prob)), 4),
         "brier": round(float(brier_score_loss(y_true, y_prob)), 4),
         "confusion_matrix": cm,
-        # --- educational regression-style metrics (NOT used for selection) ---
-        "mae": round(float(mean_absolute_error(y_true, y_prob)), 4),
-        "rmse": round(float(np.sqrt(np.mean((y_true - y_prob) ** 2))), 4),
-        "r2": round(float(r2_score(y_true, y_prob)), 4),
+        "threshold": round(float(threshold), 2),
     }
 
 
@@ -227,25 +258,41 @@ def main() -> dict:
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=TEST_SIZE, stratify=y, random_state=SEED
     )
+    # Carved out of the TRAINING fold only - the test fold never informs the
+    # threshold choice, so this stays leakage-safe.
+    X_sub, X_val, y_sub, y_val = train_test_split(
+        X_train, y_train, test_size=VAL_SIZE, stratify=y_train, random_state=SEED
+    )
 
     os.makedirs(ARTIFACT_DIR, exist_ok=True)
     results: dict[str, dict] = {}
 
-    for key, estimator, needs_scaling, reason in candidate_models():
+    for key, estimator, needs_scaling, reason in candidate_models(y_train):
         label = MODEL_LABELS[key]
         if estimator is None:
             results[key] = {"key": key, "label": label, "status": "unavailable", "reason": reason}
             print(f"[skip] {label}: {reason}")
             continue
         try:
-            pipe = Pipeline(
-                [("prep", build_preprocessor(needs_scaling)), ("model", estimator)]
-            )
-            pipe.fit(X_train, y_train)  # preprocessors fit on TRAIN ONLY
-            y_prob = pipe.predict_proba(X_test)[:, 1]
-            y_pred = (y_prob >= 0.5).astype(int)
+            # Pass 1: fit on the sub-train split, tune the decision threshold
+            # against the held-out validation split.
+            val_pipe = Pipeline([("prep", build_preprocessor(needs_scaling)),
+                                 ("model", estimator)])
+            val_pipe.fit(X_sub, y_sub)
+            val_prob = val_pipe.predict_proba(X_val)[:, 1]
+            threshold = best_f1_threshold(y_val.to_numpy(), val_prob)
 
-            metrics = evaluate(y_test.to_numpy(), y_pred, y_prob)
+            # Pass 2: refit a fresh estimator on the FULL training fold (don't
+            # waste the validation rows in the final model) and evaluate once
+            # on the untouched test fold, using the tuned threshold.
+            estimator_final = estimator.__class__(**estimator.get_params())
+            pipe = Pipeline([("prep", build_preprocessor(needs_scaling)),
+                             ("model", estimator_final)])
+            pipe.fit(X_train, y_train)
+            y_prob = pipe.predict_proba(X_test)[:, 1]
+            y_pred = (y_prob >= threshold).astype(int)
+
+            metrics = evaluate(y_test.to_numpy(), y_pred, y_prob, threshold)
             joblib.dump(pipe, os.path.join(ARTIFACT_DIR, f"{key}.joblib"))
             results[key] = {
                 "key": key,
@@ -254,7 +301,8 @@ def main() -> dict:
                 "metrics": metrics,
                 "feature_importance": feature_importance(pipe, key),
             }
-            print(f"[ok]   {label}: ROC-AUC={metrics['roc_auc']} F1={metrics['f1']}")
+            print(f"[ok]   {label}: ROC-AUC={metrics['roc_auc']} F1={metrics['f1']} "
+                  f"threshold={metrics['threshold']}")
         except Exception as exc:
             results[key] = {
                 "key": key, "label": label, "status": "failed",
@@ -263,7 +311,7 @@ def main() -> dict:
             print(f"[fail] {label}: {exc}")
 
     trained = {k: v for k, v in results.items() if v.get("status") == "trained"}
-    # Selection is driven by ROC-AUC, tie-broken by F1. Never by accuracy or R².
+    # Selection is driven by ROC-AUC, tie-broken by F1. Never by accuracy.
     best = max(
         trained,
         key=lambda k: (trained[k]["metrics"]["roc_auc"], trained[k]["metrics"]["f1"]),
@@ -288,6 +336,9 @@ def main() -> dict:
         },
         "best_model": best,
         "selection_criterion": "ROC-AUC (tie-break F1)",
+        "class_imbalance_handling": "class_weight=balanced / scale_pos_weight "
+                                     "+ F1-maximising decision threshold tuned on an "
+                                     "internal validation split (not the test fold)",
         "models": results,
     }
     with open(METRICS_JSON, "w", encoding="utf-8") as fh:

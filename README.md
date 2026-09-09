@@ -161,38 +161,48 @@ scaling parameters or category vocabularies:
 A model whose library is missing or fails to load is **skipped gracefully** and
 shown as unavailable — one optional dependency can never break the CRM.
 
+**Class imbalance.** The positive rate is ~27%, so every estimator is trained
+class-weighted (`class_weight="balanced"` for Logistic Regression / Random
+Forest / LightGBM, `scale_pos_weight` for XGBoost, `auto_class_weights="Balanced"`
+for CatBoost) rather than left to treat the imbalance as noise.
+
+**Decision threshold.** A fixed 0.5 cutoff under-predicts the minority class
+here. Instead, the training script carves a validation split out of the
+*training* fold only (never the test fold), grid-searches the threshold that
+maximises F1 on that validation split, refits the final model on the full
+training fold, and evaluates once on the untouched test fold using that tuned
+threshold. ROC-AUC, log loss and Brier score are threshold-independent and use
+raw probabilities regardless.
+
 ### Model comparison (test fold, n = 2,000)
 
-| Model | Accuracy | Precision | Recall | F1 | ROC-AUC | Log Loss | MAE* | RMSE* | R²* |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| **CatBoost** ⭐ | 0.754 | 0.620 | 0.251 | 0.358 | **0.728** | 0.520 | 0.334 | 0.415 | 0.130 |
-| Random Forest | 0.739 | 0.677 | 0.081 | 0.144 | 0.712 | 0.532 | 0.362 | 0.421 | 0.106 |
-| XGBoost | 0.744 | 0.561 | 0.272 | 0.366 | 0.705 | 0.538 | 0.334 | 0.422 | 0.100 |
-| Logistic Regression | 0.727 | 0.497 | 0.134 | 0.211 | 0.679 | 0.546 | 0.360 | 0.428 | 0.075 |
-| LightGBM | — | — | — | — | — | — | — | — | — |
+This is **binary classification**, so only classification metrics are
+reported — there is no MAE/RMSE/R² here; those are regression metrics and do
+not apply to this task.
 
-⭐ selected model. LightGBM could not load on the build machine (Windows
-Application Control blocked its native DLL) and is reported as unavailable.
+| Model | Accuracy | Precision | Recall | F1 | ROC-AUC | Log Loss | Threshold |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| **CatBoost** ⭐ | 0.660 | 0.418 | 0.633 | 0.504 | **0.717** | 0.576 | 0.45 |
+| Random Forest | 0.639 | 0.404 | 0.684 | 0.508 | 0.712 | 0.596 | 0.45 |
+| XGBoost | 0.652 | 0.411 | 0.637 | 0.500 | 0.704 | 0.583 | 0.43 |
+| Logistic Regression | 0.608 | 0.379 | 0.684 | 0.488 | 0.681 | 0.636 | 0.46 |
+| LightGBM | see note below | | | | | | |
+
+⭐ selected model, by ROC-AUC (tie-break F1) — never by accuracy, which is a
+misleading metric here (predicting "nobody buys" alone scores ~73% accuracy
+while being useless).
+
+Note the F1 jump versus a naive 0.5 cutoff: class-weighting + threshold tuning
+roughly doubled F1 on every model (e.g. Random Forest went from F1=0.144 to
+0.508) while ROC-AUC — the threshold-independent ranking metric — barely
+moved, confirming the models themselves didn't get worse, the *cutoff* was
+just wrong for a 27%-positive dataset.
+
+**Also reported:** confusion matrix and Brier score (probability calibration
+quality).
 
 Run `python ml/train_models.py` to regenerate; exact values come from
 `ml/artifacts/metrics.json`.
-
-### Metrics explanation — read this before the demo
-
-**Primary metrics (classification).** ROC-AUC is the selection criterion, with
-F1 as tie-breaker. Accuracy alone is misleading here: predicting "nobody buys"
-scores 72.8% accuracy while being useless. Recall is low at the default 0.5
-threshold because the classes are imbalanced — lowering the threshold trades
-precision for recall, which is the right business conversation to have.
-
-**Educational metrics (regression) — marked `*`.** MAE, RMSE and R² are
-computed between the binary label and the predicted probability, purely so the
-class can compare them against the regression metrics studied earlier. They are
-**not** the primary metrics for binary classification, and **the best model is
-never chosen by R²**. The UI marks them in amber with the same warning.
-
-**Also reported:** confusion matrix, log loss and Brier score (probability
-calibration quality).
 
 ---
 

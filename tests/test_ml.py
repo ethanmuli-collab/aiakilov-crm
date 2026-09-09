@@ -54,12 +54,27 @@ def test_baseline_models_are_trained():
 
 def test_every_trained_model_exposes_all_metrics():
     required = {"accuracy", "precision", "recall", "f1", "roc_auc",
-                "log_loss", "brier", "mae", "rmse", "r2", "confusion_matrix"}
+                "log_loss", "brier", "confusion_matrix", "threshold"}
     models = ml_service.available_models()
     assert models
     for m in models:
         assert required <= set(m["metrics"]), f"{m['key']} is missing metrics"
         assert 0.0 <= m["metrics"]["roc_auc"] <= 1.0
+        assert 0.0 < m["metrics"]["threshold"] < 1.0
+
+
+def test_no_regression_metrics_reported():
+    """This is binary classification - MAE/RMSE/R2 must not appear anywhere."""
+    for m in ml_service.available_models():
+        assert not {"mae", "rmse", "r2"} & set(m["metrics"])
+
+
+def test_class_imbalance_is_handled():
+    """The ~27% positive rate must not leave F1 near zero (a fixed 0.5 cutoff
+    under-predicts the minority class); class weighting + threshold tuning
+    should keep every trained model's F1 reasonably above chance."""
+    for m in ml_service.available_models():
+        assert m["metrics"]["f1"] > 0.3, f"{m['key']} F1 too low: {m['metrics']['f1']}"
 
 
 def test_best_model_selected_by_roc_auc():

@@ -49,9 +49,7 @@
         <tr>
           <th>מודל</th><th>Accuracy</th><th>Precision</th><th>Recall</th>
           <th>F1</th><th>ROC-AUC</th><th>Log Loss</th>
-          <th style="color:var(--amber)">MAE*</th>
-          <th style="color:var(--amber)">RMSE*</th>
-          <th style="color:var(--amber)">R²*</th>
+          <th>סף החלטה</th>
           <th>סטטוס</th><th></th>
         </tr>
       </thead>
@@ -66,16 +64,14 @@
           <td class="num">{{ m.metrics.accuracy }}</td>
           <td class="num">{{ m.metrics.precision }}</td>
           <td class="num">{{ m.metrics.recall }}</td>
-          <td class="num">{{ m.metrics.f1 }}</td>
+          <td class="num" style="font-weight:650">{{ m.metrics.f1 }}</td>
           <td class="num" style="font-weight:650">{{ m.metrics.roc_auc }}</td>
           <td class="num">{{ m.metrics.log_loss }}</td>
-          <td class="num" style="color:var(--text-muted)">{{ m.metrics.mae }}</td>
-          <td class="num" style="color:var(--text-muted)">{{ m.metrics.rmse }}</td>
-          <td class="num" style="color:var(--text-muted)">{{ m.metrics.r2 }}</td>
+          <td class="num" style="color:var(--text-muted)">{{ m.metrics.threshold }}</td>
           <td><span class="badge green"><span class="dot"></span>אומן</span></td>
           <td><a class="btn btn-sm" href="{{ url_for('predictions.models', model=m.key) }}">פירוט</a></td>
           {% else %}
-          <td colspan="9" style="color:var(--text-faint);font-size:12px">
+          <td colspan="7" style="color:var(--text-faint);font-size:12px">
             {{ m.reason | truncate(90) }}</td>
           <td><span class="badge red"><span class="dot"></span>
             {{ 'לא זמין' if m.status == 'unavailable' else 'נכשל' }}</span></td>
@@ -87,11 +83,14 @@
     </table>
   </div>
   <div class="card-body" style="border-top:1px solid var(--border)">
-    <p class="note warn" style="margin:0">
-      <strong>* מדדי רגרסיה - חינוכיים בלבד.</strong>
-      MAE, RMSE ובמיוחד R² חושבו בין התווית הבינארית לבין ההסתברות החזויה, לצורך השוואה
-      לימודית מול מדדי רגרסיה שנלמדו בכיתה. הם <strong>אינם</strong> המדדים הראשיים למשימת
-      סיווג בינארי, ובחירת המודל הטוב ביותר אינה מתבצעת לפיהם - אלא לפי ROC-AUC (ושובר שוויון F1).
+    <p class="note" style="margin:0">
+      <strong>זוהי משימת סיווג בינארי</strong> - כל המדדים המוצגים הם מדדי סיווג בלבד
+      (אין MAE/RMSE/R², שהם מדדי רגרסיה ואינם רלוונטיים כאן). שיעור החיובי בנתונים הוא כ-27%,
+      ולכן כל המודלים אומנו עם איזון מחלקות (<code>class_weight="balanced"</code> /
+      <code>scale_pos_weight</code>), ולכל מודל נבחר <strong>סף החלטה</strong> משלו שממקסם F1
+      על סט ולידציה פנימי שנחתך מתוך נתוני האימון בלבד (לא מסט הבדיקה) - זו הסיבה שה-F1 גבוה
+      משמעותית ממודל עם סף קבוע של 0.5. הבחירה במודל הטוב ביותר עדיין מתבצעת לפי ROC-AUC
+      (שובר שוויון F1), שהוא בלתי תלוי בסף.
     </p>
   </div>
 </div>
@@ -101,7 +100,7 @@
   <div class="card">
     <div class="card-head">
       <span class="card-title">מטריצת בלבול · {{ selected.label }}</span>
-      <span class="card-hint">סף 0.5</span>
+      <span class="card-hint">סף {{ selected.metrics.threshold }} (ממוקסם F1)</span>
     </div>
     <div class="card-body">
       {% set cm = selected.metrics.confusion_matrix %}

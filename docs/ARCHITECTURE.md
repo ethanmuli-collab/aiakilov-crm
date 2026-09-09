@@ -32,6 +32,17 @@ Supabase schema exactly, so swapping the data layer to
 comparison table. Training happens offline via `ml/train_models.py` — the
 Flask app never trains a model at request time.
 
+Every estimator is class-weighted for the ~27% positive rate, and
+`train_models.py` tunes a per-model F1-maximising decision threshold on a
+validation split carved out of the training fold only (the test fold is never
+used for threshold selection). The threshold only affects the reported
+classification metrics (accuracy/precision/recall/F1/confusion matrix) — the
+saved `.joblib` pipeline still exposes `predict_proba`, so `ml_service.predict()`
+and the app's High/Medium/Low business buckets are unaffected by it.
+
+This is a binary classification task, so only classification metrics are
+computed and shown — no MAE/RMSE/R².
+
 ## Permission layer
 
 A flat `permission -> {roles}` dict in `app/services/auth_service.py`,
